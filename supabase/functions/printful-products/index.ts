@@ -16,7 +16,7 @@ serve(async (req) => {
       throw new Error("PRINTFUL_API_TOKEN not configured");
     }
 
-    // Get sticker products from Printful API
+    // Get all products from Printful API
     const response = await fetch("https://api.printful.com/products", {
       headers: {
         "Authorization": `Bearer ${printfulToken}`,
@@ -38,7 +38,45 @@ serve(async (req) => {
 
     console.log(`Found ${stickerProducts.length} sticker products`);
 
-    return new Response(JSON.stringify({ products: stickerProducts }), {
+    // Fetch detailed information for each sticker product including variants
+    const detailedProducts = await Promise.all(
+      stickerProducts.map(async (product: any) => {
+        try {
+          const productResponse = await fetch(`https://api.printful.com/products/${product.id}`, {
+            headers: {
+              "Authorization": `Bearer ${printfulToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!productResponse.ok) {
+            console.error(`Failed to fetch product ${product.id}: ${productResponse.status}`);
+            return null;
+          }
+
+          const productData = await productResponse.json();
+          return {
+            id: product.id,
+            title: product.title,
+            description: product.description,
+            image: product.image,
+            variants: productData.result.variants || [],
+            type: product.type,
+            type_name: product.type_name
+          };
+        } catch (error) {
+          console.error(`Error fetching product ${product.id}:`, error);
+          return null;
+        }
+      })
+    );
+
+    // Filter out any failed requests
+    const validProducts = detailedProducts.filter(product => product !== null);
+
+    console.log(`Successfully fetched detailed data for ${validProducts.length} sticker products`);
+
+    return new Response(JSON.stringify({ products: validProducts }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });

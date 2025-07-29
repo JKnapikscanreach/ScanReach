@@ -15,11 +15,28 @@ interface StickerOrderModalProps {
   qrDataUrl: string;
 }
 
+interface ProductVariant {
+  id: number;
+  product_id: number;
+  name: string;
+  size: string;
+  color: string;
+  color_code: string;
+  image?: string;
+  price: string;
+  in_stock: boolean;
+  availability_regions: any;
+  availability_status: any[];
+}
+
 interface Product {
   id: string;
   title: string;
   description: string;
   image: string;
+  variants: ProductVariant[];
+  type: string;
+  type_name: string;
 }
 
 interface CustomerInfo {
@@ -47,9 +64,8 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<string>('');
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [quantity, setQuantity] = useState(25);
-  const [size, setSize] = useState('2x2');
-  const [material, setMaterial] = useState('vinyl');
   const [customer, setCustomer] = useState<CustomerInfo>({
     firstName: '',
     lastName: '',
@@ -65,26 +81,23 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
     country: 'US',
   });
 
-  const sizes = [
-    { value: '2x2', label: '2" x 2"', basePrice: 8.95 },
-    { value: '3x3', label: '3" x 3"', basePrice: 12.95 },
-    { value: '4x4', label: '4" x 4"', basePrice: 16.95 },
-    { value: '6x6', label: '6" x 6"', basePrice: 24.95 },
-  ];
-
-  const materials = [
-    { value: 'vinyl', label: 'Vinyl (Matte)', multiplier: 1.0 },
-    { value: 'transparent', label: 'Transparent', multiplier: 1.2 },
-    { value: 'holographic', label: 'Holographic', multiplier: 1.5 },
-  ];
-
   const quantities = [25, 50, 100, 250, 500];
+
+  const currentProduct = products.find(p => p.id === selectedProduct);
+  const availableVariants = currentProduct?.variants?.filter(v => v.in_stock) || [];
 
   useEffect(() => {
     if (isOpen) {
       fetchProducts();
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    // Auto-select first available variant when product changes
+    if (currentProduct && availableVariants.length > 0 && !selectedVariant) {
+      setSelectedVariant(availableVariants[0]);
+    }
+  }, [currentProduct, availableVariants, selectedVariant]);
 
   const fetchProducts = async () => {
     try {
@@ -110,21 +123,15 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
   };
 
   const calculatePrice = () => {
-    const selectedSize = sizes.find(s => s.value === size);
-    const selectedMaterial = materials.find(m => m.value === material);
+    if (!selectedVariant) return 0;
     
-    if (!selectedSize || !selectedMaterial) return 0;
+    let basePrice = parseFloat(selectedVariant.price);
     
-    let basePrice = selectedSize.basePrice;
-    
-    // Quantity discounts
+    // Quantity discounts (same as before for now)
     if (quantity >= 500) basePrice *= 0.7;
     else if (quantity >= 250) basePrice *= 0.75;
     else if (quantity >= 100) basePrice *= 0.8;
     else if (quantity >= 50) basePrice *= 0.85;
-    
-    // Material multiplier
-    basePrice *= selectedMaterial.multiplier;
     
     // Add markup (50%)
     return Math.ceil(basePrice * 1.5 * 100) / 100;
@@ -161,10 +168,10 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
       // Create the order
       const orderItems = [{
         productId: selectedProduct,
-        variantId: `${selectedProduct}_${size}_${material}`,
+        variantId: selectedVariant?.id.toString() || '',
         quantity,
-        size,
-        material,
+        size: selectedVariant?.size || '',
+        material: selectedVariant?.color || '',
         unitPrice: calculatePrice(),
       }];
 
@@ -223,17 +230,17 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="size">Size</Label>
-                  <Select value={size} onValueChange={setSize}>
+                  <Label htmlFor="product">Product</Label>
+                  <Select value={selectedProduct} onValueChange={setSelectedProduct}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select a product" />
                     </SelectTrigger>
                     <SelectContent>
-                      {sizes.map((s) => (
-                        <SelectItem key={s.value} value={s.value}>
-                          {s.label} - ${s.basePrice}
+                      {products.map((product) => (
+                        <SelectItem key={product.id} value={product.id}>
+                          {product.title}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -241,36 +248,42 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
                 </div>
 
                 <div>
-                  <Label htmlFor="material">Material</Label>
-                  <Select value={material} onValueChange={setMaterial}>
+                  <Label htmlFor="variant">Variant</Label>
+                  <Select 
+                    value={selectedVariant?.id.toString() || ''} 
+                    onValueChange={(value) => {
+                      const variant = availableVariants.find(v => v.id.toString() === value);
+                      setSelectedVariant(variant || null);
+                    }}
+                  >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select a variant" />
                     </SelectTrigger>
                     <SelectContent>
-                      {materials.map((m) => (
-                        <SelectItem key={m.value} value={m.value}>
-                          {m.label}
+                      {availableVariants.map((variant) => (
+                        <SelectItem key={variant.id} value={variant.id.toString()}>
+                          {variant.name} - {variant.size} - ${variant.price}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
 
-                <div>
-                  <Label htmlFor="quantity">Quantity</Label>
-                  <Select value={quantity.toString()} onValueChange={(value) => setQuantity(Number(value))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {quantities.map((q) => (
-                        <SelectItem key={q} value={q.toString()}>
-                          {q} stickers
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <Label htmlFor="quantity">Quantity</Label>
+                <Select value={quantity.toString()} onValueChange={(value) => setQuantity(Number(value))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {quantities.map((q) => (
+                      <SelectItem key={q} value={q.toString()}>
+                        {q} stickers
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="p-4 bg-accent rounded-lg">
