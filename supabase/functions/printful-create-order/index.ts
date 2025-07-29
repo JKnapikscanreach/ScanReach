@@ -103,56 +103,19 @@ serve(async (req) => {
         country_code: shippingAddress.country,
         zip: shippingAddress.zip,
       },
-      items: await Promise.all(orderItems.map(async (item: any) => {
+      items: orderItems.map((item: any) => {
         if (!item.variantId || !item.quantity) {
           throw new Error(`Invalid order item: missing variantId or quantity`);
         }
         
-        // Get sync variant ID for this catalog variant
-        const { data: mapping } = await supabase
-          .from('variant_mappings')
-          .select('sync_variant_id')
-          .eq('catalog_variant_id', item.variantId)
-          .single();
-
-        let syncVariantId;
-        if (mapping) {
-          syncVariantId = mapping.sync_variant_id;
-          console.log(`Found existing sync variant mapping: ${item.variantId} -> ${syncVariantId}`);
-        } else {
-          // Create sync variant on demand
-          console.log(`Creating sync variant for catalog variant: ${item.variantId}`);
-          const syncResponse = await fetch(`${supabaseUrl}/functions/v1/printful-sync-management`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${supabaseServiceKey}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              variantId: item.variantId,
-              productId: item.productId
-            })
-          });
-
-          if (!syncResponse.ok) {
-            throw new Error(`Failed to create sync variant for ${item.variantId}`);
-          }
-
-          const syncData = await syncResponse.json();
-          if (!syncData.success) {
-            throw new Error(`Sync variant creation failed: ${syncData.error}`);
-          }
-
-          syncVariantId = syncData.syncVariantId;
-          console.log(`Created sync variant: ${syncVariantId} for catalog variant: ${item.variantId}`);
-        }
+        console.log(`Using catalog variant directly: ${item.variantId}`);
         
         return {
-          sync_variant_id: parseInt(syncVariantId),
+          variant_id: parseInt(item.variantId),
           quantity: parseInt(item.quantity),
           files: [{ type: "default", id: fileId }]
         };
-      }))
+      })
     };
 
     console.log("Creating order with Printful:");
