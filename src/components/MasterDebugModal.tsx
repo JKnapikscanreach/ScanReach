@@ -25,9 +25,14 @@ export const MasterDebugModal: React.FC<MasterDebugModalProps> = ({ open, onOpen
       const matchesSearch = searchTerm === '' || 
         entry.url?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         entry.source?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        entry.error?.toLowerCase().includes(searchTerm.toLowerCase());
+        entry.error?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        JSON.stringify(entry.request).toLowerCase().includes(searchTerm.toLowerCase()) ||
+        JSON.stringify(entry.response).toLowerCase().includes(searchTerm.toLowerCase());
       
-      const matchesFilter = filterType === 'all' || entry.type === filterType;
+      const matchesFilter = filterType === 'all' || 
+        entry.type === filterType ||
+        (filterType === 'printful' && entry.source?.includes('Printful')) ||
+        (filterType === 'api' && (entry.source?.includes('API') || entry.type === 'fetch'));
       
       return matchesSearch && matchesFilter;
     });
@@ -101,7 +106,7 @@ export const MasterDebugModal: React.FC<MasterDebugModalProps> = ({ open, onOpen
               className="pl-10"
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button
               variant={filterType === 'all' ? 'default' : 'outline'}
               size="sm"
@@ -117,6 +122,13 @@ export const MasterDebugModal: React.FC<MasterDebugModalProps> = ({ open, onOpen
               Errors ({entries.filter(e => e.type === 'error').length})
             </Button>
             <Button
+              variant={filterType === 'printful' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFilterType('printful')}
+            >
+              Printful ({entries.filter(e => e.source?.includes('Printful')).length})
+            </Button>
+            <Button
               variant={filterType === 'supabase' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setFilterType('supabase')}
@@ -129,6 +141,13 @@ export const MasterDebugModal: React.FC<MasterDebugModalProps> = ({ open, onOpen
               onClick={() => setFilterType('edge-function')}
             >
               Edge Functions ({entries.filter(e => e.type === 'edge-function').length})
+            </Button>
+            <Button
+              variant={filterType === 'api' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFilterType('api')}
+            >
+              All APIs ({entries.filter(e => e.source?.includes('API') || e.type === 'fetch').length})
             </Button>
           </div>
         </div>
@@ -182,8 +201,15 @@ export const MasterDebugModal: React.FC<MasterDebugModalProps> = ({ open, onOpen
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {entry.request && (
                         <div>
-                          <h4 className="font-semibold mb-2">Request</h4>
-                          <pre className="bg-muted p-3 rounded text-xs overflow-auto max-h-40">
+                          <h4 className="font-semibold mb-2 flex items-center gap-2">
+                            Request
+                            {entry.request.timestamp && (
+                              <span className="text-xs text-muted-foreground font-normal">
+                                {new Date(entry.request.timestamp).toLocaleTimeString()}
+                              </span>
+                            )}
+                          </h4>
+                          <pre className="bg-muted p-3 rounded text-xs overflow-auto max-h-64 border">
                             {JSON.stringify(entry.request, null, 2)}
                           </pre>
                         </div>
@@ -191,8 +217,15 @@ export const MasterDebugModal: React.FC<MasterDebugModalProps> = ({ open, onOpen
                       
                       {entry.response && (
                         <div>
-                          <h4 className="font-semibold mb-2">Response</h4>
-                          <pre className="bg-muted p-3 rounded text-xs overflow-auto max-h-40">
+                          <h4 className="font-semibold mb-2 flex items-center gap-2">
+                            Response
+                            {entry.response.timestamp && (
+                              <span className="text-xs text-muted-foreground font-normal">
+                                {new Date(entry.response.timestamp).toLocaleTimeString()}
+                              </span>
+                            )}
+                          </h4>
+                          <pre className="bg-muted p-3 rounded text-xs overflow-auto max-h-64 border">
                             {JSON.stringify(entry.response, null, 2)}
                           </pre>
                         </div>
@@ -200,10 +233,21 @@ export const MasterDebugModal: React.FC<MasterDebugModalProps> = ({ open, onOpen
                       
                       {entry.error && (
                         <div className="md:col-span-2">
-                          <h4 className="font-semibold mb-2 text-destructive">Error</h4>
-                          <pre className="bg-destructive/10 border border-destructive/20 p-3 rounded text-xs overflow-auto">
+                          <h4 className="font-semibold mb-2 text-destructive">Error Details</h4>
+                          <pre className="bg-destructive/10 border border-destructive/20 p-3 rounded text-xs overflow-auto font-mono">
                             {entry.error}
                           </pre>
+                        </div>
+                      )}
+                      
+                      {entry.duration && (
+                        <div className="md:col-span-2 text-xs text-muted-foreground border-t pt-2">
+                          <span className="font-medium">Performance:</span> {formatDuration(entry.duration)}
+                          {entry.status && (
+                            <span className="ml-4">
+                              <span className="font-medium">Status:</span> {entry.status}
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>

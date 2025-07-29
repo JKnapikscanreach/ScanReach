@@ -3,11 +3,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MasterDebugModal } from './MasterDebugModal';
 import { useDebug } from '@/contexts/DebugContext';
+import { useDebugKeyboard } from '@/hooks/useDebugKeyboard';
 import { Bug, BugOff } from 'lucide-react';
 
 export const DebugFloatingButton: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const { isEnabled, toggleDebug, entries } = useDebug();
+
+  // Add keyboard shortcuts
+  useDebugKeyboard(() => setModalOpen(true));
 
   const errorCount = entries.filter(entry => entry.type === 'error' || entry.error).length;
 
@@ -37,6 +41,7 @@ export const DebugFloatingButton: React.FC = () => {
             size="sm"
             onClick={() => setModalOpen(true)}
             className="relative"
+            title="Open Master Debug Console (Ctrl+Shift+D)"
           >
             Debug ({entries.length})
             {errorCount > 0 && (

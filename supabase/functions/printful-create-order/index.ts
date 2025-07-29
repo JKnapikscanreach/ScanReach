@@ -125,7 +125,7 @@ serve(async (req) => {
           const syncResponse = await fetch(`${supabaseUrl}/functions/v1/printful-sync-management`, {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${printfulToken}`,
+              'Authorization': `Bearer ${supabaseServiceKey}`,
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({

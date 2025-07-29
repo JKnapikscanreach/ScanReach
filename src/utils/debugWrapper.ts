@@ -194,7 +194,7 @@ const createDebugQueryBuilder = (
   });
 };
 
-// Debug wrapper for fetch requests
+// Debug wrapper for fetch requests with enhanced API tracking
 export const debugFetch = (
   addDebugEntry: (entry: Omit<DebugEntry, 'id' | 'timestamp'>) => void
 ) => {
@@ -205,55 +205,117 @@ export const debugFetch = (
     const url = typeof input === 'string' ? input : input.toString();
     const method = init?.method || 'GET';
     
-    try {
-      addDebugEntry({
-        type: 'fetch',
-        method,
-        url,
-        request: {
-          headers: init?.headers,
-          body: init?.body
-        },
-        source: 'Fetch API'
-      });
+    // Enhanced request logging
+    const requestBody = init?.body;
+    let parsedRequestBody;
+    
+    if (requestBody) {
+      try {
+        if (typeof requestBody === 'string') {
+          parsedRequestBody = JSON.parse(requestBody);
+        } else {
+          parsedRequestBody = requestBody;
+        }
+      } catch {
+        parsedRequestBody = requestBody;
+      }
+    }
 
+    // Determine API provider
+    let apiProvider = 'Unknown';
+    if (url.includes('printful.com')) {
+      apiProvider = 'Printful';
+    } else if (url.includes('supabase.co')) {
+      apiProvider = 'Supabase';
+    } else if (url.includes('/functions/v1/')) {
+      apiProvider = 'Edge Function';
+    }
+
+    addDebugEntry({
+      type: 'fetch',
+      method,
+      url,
+      source: `${apiProvider} API`,
+      request: {
+        headers: init?.headers ? Object.fromEntries(
+          Object.entries(init.headers).map(([k, v]) => 
+            k.toLowerCase().includes('authorization') ? [k, '[REDACTED]'] : [k, v]
+          )
+        ) : undefined,
+        body: parsedRequestBody,
+        timestamp: new Date().toISOString(),
+      },
+    });
+
+    try {
       const response = await originalFetch(input, init);
       const duration = Date.now() - startTime;
-
-      // Clone response to read body without consuming it
-      const responseClone = response.clone();
+      
       let responseData;
+      let responseHeaders: Record<string, string> = {};
+      
       try {
-        responseData = await responseClone.json();
+        // Capture response headers
+        response.headers.forEach((value, key) => {
+          responseHeaders[key] = value;
+        });
+
+        responseData = await response.clone().text();
+        try {
+          responseData = JSON.parse(responseData);
+        } catch {
+          // Keep as string if not JSON
+        }
       } catch {
-        responseData = await responseClone.text();
+        responseData = 'Unable to read response body';
       }
 
       addDebugEntry({
-        type: 'fetch',
+        type: response.ok ? 'fetch' : 'error',
         method,
         url,
+        source: `${apiProvider} API`,
         request: {
-          headers: init?.headers,
-          body: init?.body
+          headers: init?.headers ? Object.fromEntries(
+            Object.entries(init.headers).map(([k, v]) => 
+              k.toLowerCase().includes('authorization') ? [k, '[REDACTED]'] : [k, v]
+            )
+          ) : undefined,
+          body: parsedRequestBody,
+          timestamp: new Date().toISOString(),
         },
-        response: responseData,
-        duration,
+        response: {
+          data: responseData,
+          headers: responseHeaders,
+          timestamp: new Date().toISOString(),
+        },
         status: response.status,
-        source: 'Fetch API'
+        duration,
+        error: response.ok ? undefined : `HTTP ${response.status}: ${response.statusText}`,
       });
 
       return response;
     } catch (error) {
       const duration = Date.now() - startTime;
+      
       addDebugEntry({
         type: 'error',
         method,
         url,
-        duration,
+        source: `${apiProvider} API`,
+        request: {
+          headers: init?.headers ? Object.fromEntries(
+            Object.entries(init.headers).map(([k, v]) => 
+              k.toLowerCase().includes('authorization') ? [k, '[REDACTED]'] : [k, v]
+            )
+          ) : undefined,
+          body: parsedRequestBody,
+          timestamp: new Date().toISOString(),
+        },
         error: error instanceof Error ? error.message : 'Unknown error',
-        source: 'Fetch API'
+        duration,
       });
+
       throw error;
     }
   };

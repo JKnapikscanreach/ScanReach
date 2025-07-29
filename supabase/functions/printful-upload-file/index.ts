@@ -6,10 +6,18 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Debug logging helper
+function debugLog(message: string, data?: any) {
+  console.log(`[${new Date().toISOString()}] ${message}`, data ? JSON.stringify(data, null, 2) : '');
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  debugLog(`Starting upload request: ${requestId}`);
 
   try {
     const printfulToken = Deno.env.get("PRINTFUL_API_TOKEN");
@@ -29,7 +37,7 @@ serve(async (req) => {
     const requestData = await req.json();
     const { imageDataUrl, filename = "qr-code.png" } = requestData;
 
-    console.log("Received upload request for:", filename);
+    debugLog("Received upload request", { requestId, filename, hasImageData: !!imageDataUrl });
 
     // Validate input data
     if (!imageDataUrl) {
@@ -51,7 +59,7 @@ serve(async (req) => {
       throw new Error("Unsupported image format. Only PNG and JPEG are supported.");
     }
 
-    console.log(`Processing ${mimeType} image of ${base64Data.length} characters`);
+    debugLog(`Processing image`, { mimeType, dataLength: base64Data.length, requestId });
 
     let binaryData;
     try {
@@ -67,14 +75,14 @@ serve(async (req) => {
       throw new Error(`File too large: ${binaryData.length} bytes. Maximum allowed: ${maxSize} bytes`);
     }
 
-    console.log(`File size: ${binaryData.length} bytes`);
+    debugLog(`File validated`, { size: binaryData.length, requestId });
 
-    // Step 1: Upload to Supabase Storage
+    // Step 1: Upload to Supabase Storage (permanent storage)
     const timestamp = Date.now();
     const storageFilename = `${timestamp}-${filename}`;
     const blob = new Blob([binaryData], { type: mimeType });
     
-    console.log(`Uploading to Supabase Storage: ${storageFilename}`);
+    debugLog(`Uploading to Supabase Storage`, { storageFilename, requestId });
     
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('qr-codes')
@@ -88,7 +96,7 @@ serve(async (req) => {
       throw new Error(`Storage upload failed: ${uploadError.message}`);
     }
 
-    console.log("Successfully uploaded to storage:", uploadData.path);
+    debugLog("Successfully uploaded to storage", { path: uploadData.path, requestId });
 
     // Step 2: Get public URL
     const { data: urlData } = supabase.storage
@@ -99,18 +107,22 @@ serve(async (req) => {
       throw new Error("Failed to get public URL for uploaded file");
     }
 
-    console.log("Generated public URL:", urlData.publicUrl);
+    debugLog("Generated public URL", { publicUrl: urlData.publicUrl, requestId });
 
-    // Step 3: Send URL to Printful
+    // Step 3: Send URL to Printful with enhanced metadata
     const printfulPayload = {
       url: urlData.publicUrl,
       filename: filename,
-      type: "default"
+      type: "default",
+      options: [
+        {
+          id: "stitch_color",
+          value: "default"
+        }
+      ]
     };
 
-    console.log("Sending URL to Printful:", printfulPayload);
-
-    let tempFileCreated = true;
+    debugLog("Sending to Printful API", { payload: printfulPayload, requestId });
 
     try {
       const response = await fetch("https://api.printful.com/files", {
@@ -122,7 +134,11 @@ serve(async (req) => {
         body: JSON.stringify(printfulPayload),
       });
 
-      console.log(`Printful API response status: ${response.status}`);
+      debugLog(`Printful API response`, { 
+        status: response.status, 
+        statusText: response.statusText,
+        requestId 
+      });
 
       if (!response.ok) {
         const errorData = await response.text();
@@ -131,50 +147,41 @@ serve(async (req) => {
       }
 
       const data = await response.json();
-      console.log("File uploaded successfully to Printful:", JSON.stringify({
-        id: data.result?.id,
+      debugLog("Printful upload successful", {
+        fileId: data.result?.id,
         filename: data.result?.filename,
-        preview_url: data.result?.preview_url
-      }));
+        previewUrl: data.result?.preview_url,
+        requestId
+      });
 
       if (!data.result?.id) {
         throw new Error("Upload succeeded but no file ID returned");
       }
 
-      // Clean up storage file after successful Printful upload
-      console.log("Cleaning up temporary file from storage");
-      const { error: deleteError } = await supabase.storage
-        .from('qr-codes')
-        .remove([storageFilename]);
-
-      if (deleteError) {
-        console.warn("Failed to clean up temporary file:", deleteError.message);
-      } else {
-        tempFileCreated = false;
-        console.log("Successfully cleaned up temporary file");
-      }
+      // Files are now kept permanently in storage for Printful preview generation
+      debugLog("File upload completed successfully", { 
+        fileId: data.result.id,
+        storageFile: storageFilename,
+        requestId 
+      });
 
       return new Response(JSON.stringify({ 
         fileId: data.result.id, 
         fileUrl: data.result.preview_url,
-        filename: data.result.filename
+        filename: data.result.filename,
+        storageUrl: urlData.publicUrl,
+        requestId: requestId
       }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { 
+          ...corsHeaders, 
+          "Content-Type": "application/json",
+          "X-Request-ID": requestId
+        },
         status: 200,
       });
 
     } catch (printfulError) {
-      // Clean up storage file on Printful error
-      if (tempFileCreated) {
-        console.log("Cleaning up temporary file due to Printful error");
-        const { error: deleteError } = await supabase.storage
-          .from('qr-codes')
-          .remove([storageFilename]);
-        
-        if (deleteError) {
-          console.warn("Failed to clean up temporary file:", deleteError.message);
-        }
-      }
+      debugLog("Printful API error", { error: printfulError.message, requestId });
       throw printfulError;
     }
 
@@ -185,10 +192,15 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: error.message,
-        details: error.stack?.split('\n')[0] || error.message
+        details: error.stack?.split('\n')[0] || error.message,
+        requestId: requestId
       }),
       {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { 
+          ...corsHeaders, 
+          "Content-Type": "application/json",
+          "X-Request-ID": requestId
+        },
         status: 500,
       }
     );

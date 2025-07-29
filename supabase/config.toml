@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.printful-order-status]
 verify_jwt = false
+
+[functions.printful-sync-management]
+verify_jwt = false
