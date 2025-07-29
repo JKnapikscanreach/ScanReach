@@ -30,7 +30,7 @@ interface ProductVariant {
 }
 
 interface Product {
-  id: string;
+  id: number;
   title: string;
   description: string;
   image: string;
@@ -63,9 +63,9 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState<string>('');
+  const [selectedProduct, setSelectedProduct] = useState<number | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
-  const [quantity, setQuantity] = useState(25);
+  const [quantity, setQuantity] = useState(1);
   const [customer, setCustomer] = useState<CustomerInfo>({
     firstName: '',
     lastName: '',
@@ -81,10 +81,10 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
     country: 'US',
   });
 
-  const quantities = [25, 50, 100, 250, 500];
-
   const currentProduct = products.find(p => p.id === selectedProduct);
   const availableVariants = currentProduct?.variants?.filter(v => v.in_stock) || [];
+  
+  console.log('Current state:', { selectedProduct, currentProduct, availableVariants: availableVariants.length });
 
   useEffect(() => {
     if (isOpen) {
@@ -93,11 +93,14 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
   }, [isOpen]);
 
   useEffect(() => {
-    // Auto-select first available variant when product changes
-    if (currentProduct && availableVariants.length > 0 && !selectedVariant) {
+    // Reset and auto-select first available variant when product changes
+    if (currentProduct && availableVariants.length > 0) {
+      console.log('Setting first variant for product:', currentProduct.title);
       setSelectedVariant(availableVariants[0]);
+    } else {
+      setSelectedVariant(null);
     }
-  }, [currentProduct, availableVariants, selectedVariant]);
+  }, [selectedProduct]); // Only depend on selectedProduct to avoid race conditions
 
   const fetchProducts = async () => {
     try {
@@ -106,8 +109,10 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
       
       if (error) throw error;
       
+      console.log('Fetched products:', data.products);
       setProducts(data.products || []);
       if (data.products?.length > 0) {
+        console.log('Auto-selecting first product:', data.products[0]);
         setSelectedProduct(data.products[0].id);
       }
     } catch (error) {
@@ -174,7 +179,7 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
 
       // Create the order
       const orderItems = [{
-        productId: selectedProduct,
+        productId: selectedProduct?.toString() || '',
         variantId: selectedVariant?.id.toString() || '',
         quantity,
         size: selectedVariant?.size || '',
@@ -240,13 +245,20 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="product">Product</Label>
-                  <Select value={selectedProduct} onValueChange={setSelectedProduct}>
+                  <Select 
+                    value={selectedProduct?.toString() || ''} 
+                    onValueChange={(value) => {
+                      const productId = Number(value);
+                      console.log('Product selected:', productId);
+                      setSelectedProduct(productId);
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a product" />
                     </SelectTrigger>
                     <SelectContent>
                       {products.map((product) => (
-                        <SelectItem key={product.id} value={product.id}>
+                        <SelectItem key={product.id} value={product.id.toString()}>
                           {product.title}
                         </SelectItem>
                       ))}
@@ -260,6 +272,7 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
                     value={selectedVariant?.id.toString() || ''} 
                     onValueChange={(value) => {
                       const variant = availableVariants.find(v => v.id.toString() === value);
+                      console.log('Variant selected:', variant);
                       setSelectedVariant(variant || null);
                     }}
                   >
@@ -278,19 +291,19 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
               </div>
 
               <div>
-                <Label htmlFor="quantity">Quantity</Label>
-                <Select value={quantity.toString()} onValueChange={(value) => setQuantity(Number(value))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {quantities.map((q) => (
-                      <SelectItem key={q} value={q.toString()}>
-                        {q} stickers
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="quantity">Quantity (1-10)</Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={quantity}
+                  onChange={(e) => {
+                    const value = Math.max(1, Math.min(10, Number(e.target.value)));
+                    setQuantity(value);
+                  }}
+                  className="w-full"
+                />
               </div>
 
               <div className="p-4 bg-accent rounded-lg">
