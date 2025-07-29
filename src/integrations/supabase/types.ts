@@ -14,7 +14,127 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      customers: {
+        Row: {
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          last_name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          material: string
+          order_id: string
+          product_id: string
+          quantity: number
+          size: string
+          unit_price: number
+          variant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          material: string
+          order_id: string
+          product_id: string
+          quantity: number
+          size: string
+          unit_price: number
+          variant_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          material?: string
+          order_id?: string
+          product_id?: string
+          quantity?: number
+          size?: string
+          unit_price?: number
+          variant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          currency: string
+          customer_id: string
+          id: string
+          printful_order_id: string | null
+          qr_data_url: string
+          shipping_address: Json
+          status: string
+          total_cost: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          customer_id: string
+          id?: string
+          printful_order_id?: string | null
+          qr_data_url: string
+          shipping_address: Json
+          status?: string
+          total_cost: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          customer_id?: string
+          id?: string
+          printful_order_id?: string | null
+          qr_data_url?: string
+          shipping_address?: Json
+          status?: string
+          total_cost?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
