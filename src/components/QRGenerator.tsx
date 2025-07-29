@@ -11,7 +11,6 @@ import { Upload, Download, Printer, Palette, Settings, History } from 'lucide-re
 import { toast } from 'sonner';
 import { StickerOrderModal } from './StickerOrderModal';
 import { OrderHistoryModal } from './OrderHistoryModal';
-
 interface QRConfig {
   url: string;
   size: number;
@@ -21,7 +20,6 @@ interface QRConfig {
   logoSize: number;
   margin: number;
 }
-
 const QRGenerator = () => {
   const [config, setConfig] = useState<QRConfig>({
     url: '',
@@ -32,45 +30,43 @@ const QRGenerator = () => {
     logoSize: 20,
     margin: 4
   });
-  
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoDataUrl, setLogoDataUrl] = useState<string>('');
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [isOrderHistoryModalOpen, setIsOrderHistoryModalOpen] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
   const onDrop = (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (file) {
       setLogoFile(file);
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = e => {
         setLogoDataUrl(e.target?.result as string);
       };
       reader.readAsDataURL(file);
       toast.success('Logo uploaded successfully!');
     }
   };
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const {
+    getRootProps,
+    getInputProps,
+    isDragActive
+  } = useDropzone({
     onDrop,
     accept: {
       'image/*': ['.png', '.jpg', '.jpeg', '.svg']
     },
     maxFiles: 1
   });
-
   const generateQR = async () => {
     if (!config.url) {
       toast.error('Please enter a URL');
       return;
     }
-
     try {
       const canvas = canvasRef.current;
       if (!canvas) return;
-
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
@@ -93,16 +89,15 @@ const QRGenerator = () => {
       if (logoDataUrl) {
         const logo = new Image();
         logo.onload = () => {
-          const logoSizePixels = (config.size * config.logoSize) / 100;
+          const logoSizePixels = config.size * config.logoSize / 100;
           const x = (config.size - logoSizePixels) / 2;
           const y = (config.size - logoSizePixels) / 2;
-          
+
           // Add white background for logo
           ctx.fillStyle = config.backgroundColor;
           ctx.fillRect(x - 5, y - 5, logoSizePixels + 10, logoSizePixels + 10);
-          
           ctx.drawImage(logo, x, y, logoSizePixels, logoSizePixels);
-          
+
           // Update data URL
           setQrDataUrl(canvas.toDataURL('image/png'));
         };
@@ -110,24 +105,20 @@ const QRGenerator = () => {
       } else {
         setQrDataUrl(canvas.toDataURL('image/png'));
       }
-
       toast.success('QR code generated successfully!');
     } catch (error) {
       toast.error('Failed to generate QR code');
       console.error(error);
     }
   };
-
   const downloadQR = () => {
     if (!qrDataUrl) return;
-    
     const link = document.createElement('a');
     link.download = 'qr-code.png';
     link.href = qrDataUrl;
     link.click();
     toast.success('QR code downloaded!');
   };
-
   const orderStickers = () => {
     if (!qrDataUrl) {
       generateQR().then(() => {
@@ -137,15 +128,12 @@ const QRGenerator = () => {
       setIsOrderModalOpen(true);
     }
   };
-
   useEffect(() => {
     if (config.url) {
       generateQR();
     }
   }, [config, logoDataUrl]);
-
-  return (
-    <div className="min-h-screen bg-background p-6">
+  return <div className="min-h-screen p-6 bg-gray-200">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-4">
@@ -169,34 +157,26 @@ const QRGenerator = () => {
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="url">Website URL</Label>
-                  <Input
-                    id="url"
-                    placeholder="https://example.com"
-                    value={config.url}
-                    onChange={(e) => setConfig(prev => ({ ...prev, url: e.target.value }))}
-                  />
+                  <Input id="url" placeholder="https://example.com" value={config.url} onChange={e => setConfig(prev => ({
+                  ...prev,
+                  url: e.target.value
+                }))} />
                 </div>
 
                 <div>
                   <Label>Size: {config.size}px</Label>
-                  <Slider
-                    value={[config.size]}
-                    onValueChange={(value) => setConfig(prev => ({ ...prev, size: value[0] }))}
-                    max={1024}
-                    min={256}
-                    step={32}
-                    className="mt-2"
-                  />
+                  <Slider value={[config.size]} onValueChange={value => setConfig(prev => ({
+                  ...prev,
+                  size: value[0]
+                }))} max={1024} min={256} step={32} className="mt-2" />
                 </div>
 
                 <div>
                   <Label>Error Correction</Label>
-                  <Select 
-                    value={config.errorCorrectionLevel} 
-                    onValueChange={(value: 'L' | 'M' | 'Q' | 'H') => 
-                      setConfig(prev => ({ ...prev, errorCorrectionLevel: value }))
-                    }
-                  >
+                  <Select value={config.errorCorrectionLevel} onValueChange={(value: 'L' | 'M' | 'Q' | 'H') => setConfig(prev => ({
+                  ...prev,
+                  errorCorrectionLevel: value
+                }))}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -223,62 +203,46 @@ const QRGenerator = () => {
                   <div>
                     <Label htmlFor="foreground">Foreground</Label>
                     <div className="flex gap-2 items-center">
-                      <Input
-                        id="foreground"
-                        type="color"
-                        value={config.foregroundColor}
-                        onChange={(e) => setConfig(prev => ({ ...prev, foregroundColor: e.target.value }))}
-                        className="w-12 h-10 p-0 border-0"
-                      />
-                      <Input
-                        value={config.foregroundColor}
-                        onChange={(e) => setConfig(prev => ({ ...prev, foregroundColor: e.target.value }))}
-                        placeholder="#000000"
-                      />
+                      <Input id="foreground" type="color" value={config.foregroundColor} onChange={e => setConfig(prev => ({
+                      ...prev,
+                      foregroundColor: e.target.value
+                    }))} className="w-12 h-10 p-0 border-0" />
+                      <Input value={config.foregroundColor} onChange={e => setConfig(prev => ({
+                      ...prev,
+                      foregroundColor: e.target.value
+                    }))} placeholder="#000000" />
                     </div>
                   </div>
 
                   <div>
                     <Label htmlFor="background">Background</Label>
                     <div className="flex gap-2 items-center">
-                      <Input
-                        id="background"
-                        type="color"
-                        value={config.backgroundColor}
-                        onChange={(e) => setConfig(prev => ({ ...prev, backgroundColor: e.target.value }))}
-                        className="w-12 h-10 p-0 border-0"
-                      />
-                      <Input
-                        value={config.backgroundColor}
-                        onChange={(e) => setConfig(prev => ({ ...prev, backgroundColor: e.target.value }))}
-                        placeholder="#ffffff"
-                      />
+                      <Input id="background" type="color" value={config.backgroundColor} onChange={e => setConfig(prev => ({
+                      ...prev,
+                      backgroundColor: e.target.value
+                    }))} className="w-12 h-10 p-0 border-0" />
+                      <Input value={config.backgroundColor} onChange={e => setConfig(prev => ({
+                      ...prev,
+                      backgroundColor: e.target.value
+                    }))} placeholder="#ffffff" />
                     </div>
                   </div>
                 </div>
 
                 <div>
                   <Label>Logo Size: {config.logoSize}%</Label>
-                  <Slider
-                    value={[config.logoSize]}
-                    onValueChange={(value) => setConfig(prev => ({ ...prev, logoSize: value[0] }))}
-                    max={40}
-                    min={5}
-                    step={1}
-                    className="mt-2"
-                  />
+                  <Slider value={[config.logoSize]} onValueChange={value => setConfig(prev => ({
+                  ...prev,
+                  logoSize: value[0]
+                }))} max={40} min={5} step={1} className="mt-2" />
                 </div>
 
                 <div>
                   <Label>Margin: {config.margin}</Label>
-                  <Slider
-                    value={[config.margin]}
-                    onValueChange={(value) => setConfig(prev => ({ ...prev, margin: value[0] }))}
-                    max={8}
-                    min={0}
-                    step={1}
-                    className="mt-2"
-                  />
+                  <Slider value={[config.margin]} onValueChange={value => setConfig(prev => ({
+                  ...prev,
+                  margin: value[0]
+                }))} max={8} min={0} step={1} className="mt-2" />
                 </div>
               </CardContent>
             </Card>
@@ -291,28 +255,19 @@ const QRGenerator = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div
-                  {...getRootProps()}
-                  className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                    isDragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'
-                  }`}
-                >
+                <div {...getRootProps()} className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${isDragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'}`}>
                   <input {...getInputProps()} />
-                  {logoDataUrl ? (
-                    <div className="space-y-2">
+                  {logoDataUrl ? <div className="space-y-2">
                       <img src={logoDataUrl} alt="Logo preview" className="w-16 h-16 mx-auto object-contain" />
                       <p className="text-sm text-muted-foreground">
                         {logoFile?.name} - Click to change
                       </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
+                    </div> : <div className="space-y-2">
                       <Upload className="w-8 h-8 mx-auto text-muted-foreground" />
                       <p className="text-sm text-muted-foreground">
                         {isDragActive ? 'Drop your logo here' : 'Drag & drop or click to upload'}
                       </p>
-                    </div>
-                  )}
+                    </div>}
                 </div>
               </CardContent>
             </Card>
@@ -326,49 +281,28 @@ const QRGenerator = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex justify-center p-8 bg-gradient-secondary rounded-lg">
-                  {qrDataUrl ? (
-                    <img 
-                      src={qrDataUrl} 
-                      alt="QR Code Preview" 
-                      className="max-w-full h-auto shadow-glow-primary rounded-lg"
-                      style={{ maxWidth: '300px' }}
-                    />
-                  ) : (
-                    <div className="w-64 h-64 border-2 border-dashed border-muted-foreground/25 rounded-lg flex items-center justify-center">
+                  {qrDataUrl ? <img src={qrDataUrl} alt="QR Code Preview" className="max-w-full h-auto shadow-glow-primary rounded-lg" style={{
+                  maxWidth: '300px'
+                }} /> : <div className="w-64 h-64 border-2 border-dashed border-muted-foreground/25 rounded-lg flex items-center justify-center">
                       <p className="text-muted-foreground">Enter URL to preview</p>
-                    </div>
-                  )}
+                    </div>}
                 </div>
                 <canvas ref={canvasRef} className="hidden" />
               </CardContent>
             </Card>
 
             <div className="grid grid-cols-3 gap-3">
-              <Button 
-                onClick={downloadQR}
-                disabled={!qrDataUrl}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
+              <Button onClick={downloadQR} disabled={!qrDataUrl} variant="outline" className="flex items-center gap-2">
                 <Download className="w-4 h-4" />
                 Download
               </Button>
               
-              <Button 
-                onClick={orderStickers}
-                disabled={!qrDataUrl}
-                variant="gradient"
-                className="flex items-center gap-2"
-              >
+              <Button onClick={orderStickers} disabled={!qrDataUrl} variant="gradient" className="flex items-center gap-2">
                 <Printer className="w-4 h-4" />
                 Order Stickers
               </Button>
 
-              <Button 
-                onClick={() => setIsOrderHistoryModalOpen(true)}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
+              <Button onClick={() => setIsOrderHistoryModalOpen(true)} variant="outline" className="flex items-center gap-2">
                 <History className="w-4 h-4" />
                 Order History
               </Button>
@@ -389,18 +323,9 @@ const QRGenerator = () => {
         </div>
       </div>
 
-      <StickerOrderModal
-        isOpen={isOrderModalOpen}
-        onClose={() => setIsOrderModalOpen(false)}
-        qrDataUrl={qrDataUrl}
-      />
+      <StickerOrderModal isOpen={isOrderModalOpen} onClose={() => setIsOrderModalOpen(false)} qrDataUrl={qrDataUrl} />
 
-      <OrderHistoryModal
-        isOpen={isOrderHistoryModalOpen}
-        onClose={() => setIsOrderHistoryModalOpen(false)}
-      />
-    </div>
-  );
+      <OrderHistoryModal isOpen={isOrderHistoryModalOpen} onClose={() => setIsOrderHistoryModalOpen(false)} />
+    </div>;
 };
-
 export default QRGenerator;
