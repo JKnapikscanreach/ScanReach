@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,9 +13,18 @@ serve(async (req) => {
 
   try {
     const printfulToken = Deno.env.get("PRINTFUL_API_TOKEN");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
     if (!printfulToken) {
       throw new Error("PRINTFUL_API_TOKEN not configured");
     }
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error("Supabase configuration missing");
+    }
+
+    // Initialize Supabase client
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const requestData = await req.json();
     const { imageDataUrl, filename = "qr-code.png" } = requestData;
@@ -59,74 +69,114 @@ serve(async (req) => {
 
     console.log(`File size: ${binaryData.length} bytes`);
 
-    // Create form data for file upload - Printful expects 'files[]' not 'file[]'
-    const formData = new FormData();
+    // Step 1: Upload to Supabase Storage
+    const timestamp = Date.now();
+    const storageFilename = `${timestamp}-${filename}`;
     const blob = new Blob([binaryData], { type: mimeType });
-    formData.append('files[]', blob, filename);
-    formData.append('type', 'default');
+    
+    console.log(`Uploading to Supabase Storage: ${storageFilename}`);
+    
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('qr-codes')
+      .upload(storageFilename, blob, {
+        contentType: mimeType,
+        upsert: false
+      });
 
-    console.log(`Uploading file to Printful: ${filename}, type: ${mimeType}`);
-
-    // Retry mechanism with exponential backoff
-    let lastError;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        const response = await fetch("https://api.printful.com/files", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${printfulToken}`,
-          },
-          body: formData,
-        });
-
-        console.log(`Upload attempt ${attempt + 1}, status: ${response.status}`);
-
-        if (!response.ok) {
-          const errorData = await response.text();
-          console.error(`Printful API error (attempt ${attempt + 1}):`, errorData);
-          
-          if (response.status >= 500 && attempt < 2) {
-            // Retry on server errors
-            const delay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
-            console.log(`Retrying in ${delay}ms...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
-            continue;
-          }
-          
-          throw new Error(`Printful file upload error: ${response.status} - ${errorData}`);
-        }
-
-        const data = await response.json();
-        console.log("File uploaded successfully:", JSON.stringify({
-          id: data.result?.id,
-          filename: data.result?.filename,
-          preview_url: data.result?.preview_url
-        }));
-
-        if (!data.result?.id) {
-          throw new Error("Upload succeeded but no file ID returned");
-        }
-
-        return new Response(JSON.stringify({ 
-          fileId: data.result.id, 
-          fileUrl: data.result.preview_url,
-          filename: data.result.filename
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        });
-
-      } catch (error) {
-        lastError = error;
-        console.error(`Upload attempt ${attempt + 1} failed:`, error.message);
-        
-        if (attempt === 2) {
-          throw error;
-        }
-      }
+    if (uploadError) {
+      console.error("Supabase Storage upload error:", uploadError);
+      throw new Error(`Storage upload failed: ${uploadError.message}`);
     }
 
-    throw lastError;
+    console.log("Successfully uploaded to storage:", uploadData.path);
+
+    // Step 2: Get public URL
+    const { data: urlData } = supabase.storage
+      .from('qr-codes')
+      .getPublicUrl(storageFilename);
+
+    if (!urlData?.publicUrl) {
+      throw new Error("Failed to get public URL for uploaded file");
+    }
+
+    console.log("Generated public URL:", urlData.publicUrl);
+
+    // Step 3: Send URL to Printful
+    const printfulPayload = {
+      url: urlData.publicUrl,
+      filename: filename,
+      type: "default"
+    };
+
+    console.log("Sending URL to Printful:", printfulPayload);
+
+    let tempFileCreated = true;
+
+    try {
+      const response = await fetch("https://api.printful.com/files", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${printfulToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(printfulPayload),
+      });
+
+      console.log(`Printful API response status: ${response.status}`);
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error("Printful API error:", errorData);
+        throw new Error(`Printful file upload error: ${response.status} - ${errorData}`);
+      }
+
+      const data = await response.json();
+      console.log("File uploaded successfully to Printful:", JSON.stringify({
+        id: data.result?.id,
+        filename: data.result?.filename,
+        preview_url: data.result?.preview_url
+      }));
+
+      if (!data.result?.id) {
+        throw new Error("Upload succeeded but no file ID returned");
+      }
+
+      // Clean up storage file after successful Printful upload
+      console.log("Cleaning up temporary file from storage");
+      const { error: deleteError } = await supabase.storage
+        .from('qr-codes')
+        .remove([storageFilename]);
+
+      if (deleteError) {
+        console.warn("Failed to clean up temporary file:", deleteError.message);
+      } else {
+        tempFileCreated = false;
+        console.log("Successfully cleaned up temporary file");
+      }
+
+      return new Response(JSON.stringify({ 
+        fileId: data.result.id, 
+        fileUrl: data.result.preview_url,
+        filename: data.result.filename
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+
+    } catch (printfulError) {
+      // Clean up storage file on Printful error
+      if (tempFileCreated) {
+        console.log("Cleaning up temporary file due to Printful error");
+        const { error: deleteError } = await supabase.storage
+          .from('qr-codes')
+          .remove([storageFilename]);
+        
+        if (deleteError) {
+          console.warn("Failed to clean up temporary file:", deleteError.message);
+        }
+      }
+      throw printfulError;
+    }
 
   } catch (error) {
     console.error("Error uploading file to Printful:", error.message);
