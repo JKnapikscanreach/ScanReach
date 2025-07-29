@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Package, Truck } from 'lucide-react';
+import { Loader2, Package, Truck, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface StickerOrderModalProps {
   isOpen: boolean;
@@ -55,6 +56,18 @@ interface ShippingAddress {
   country: string;
 }
 
+const COUNTRIES = [
+  { code: 'US', name: 'United States' },
+  { code: 'CA', name: 'Canada' },
+  { code: 'GB', name: 'United Kingdom' },
+  { code: 'AU', name: 'Australia' },
+  { code: 'DE', name: 'Germany' },
+  { code: 'FR', name: 'France' },
+  { code: 'ES', name: 'Spain' },
+  { code: 'IT', name: 'Italy' },
+  { code: 'JP', name: 'Japan' },
+];
+
 export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
   isOpen,
   onClose,
@@ -62,10 +75,12 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
 }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<number | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [errors, setErrors] = useState<string[]>([]);
   const [customer, setCustomer] = useState<CustomerInfo>({
     firstName: '',
     lastName: '',
@@ -89,6 +104,7 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       fetchProducts();
+      setErrors([]);
     }
   }, [isOpen]);
 
@@ -105,18 +121,24 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
   const fetchProducts = async () => {
     try {
       setLoading(true);
+      console.log('Fetching products from Printful...');
       const { data, error } = await supabase.functions.invoke('printful-products');
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
       
-      console.log('Fetched products:', data.products);
-      setProducts(data.products || []);
-      if (data.products?.length > 0) {
+      console.log('Fetched products:', data?.products);
+      setProducts(data?.products || []);
+      if (data?.products?.length > 0) {
         console.log('Auto-selecting first product:', data.products[0]);
         setSelectedProduct(data.products[0].id);
       }
     } catch (error) {
       console.error('Error fetching products:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setErrors([`Failed to fetch available products: ${errorMessage}`]);
       toast({
         title: 'Error',
         description: 'Failed to fetch available products',
@@ -134,36 +156,55 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
       return 0;
     }
     
-    let basePrice = parseFloat(selectedVariant.price);
+    // Use the actual Printful price without arbitrary markups
+    const basePrice = parseFloat(selectedVariant.price);
     console.log('Base price from variant:', basePrice);
     
-    // Quantity discounts (same as before for now)
-    if (quantity >= 500) basePrice *= 0.7;
-    else if (quantity >= 250) basePrice *= 0.75;
-    else if (quantity >= 100) basePrice *= 0.8;
-    else if (quantity >= 50) basePrice *= 0.85;
+    // Return the actual price - no artificial markups
+    console.log('Final calculated price:', basePrice);
+    return basePrice;
+  };
+
+  const validateForm = (): string[] => {
+    const newErrors: string[] = [];
     
-    // Add markup (50%)
-    const finalPrice = Math.ceil(basePrice * 1.5 * 100) / 100;
-    console.log('Final calculated price:', finalPrice);
-    return finalPrice;
+    if (!selectedProduct) newErrors.push('Please select a product');
+    if (!selectedVariant) newErrors.push('Please select a variant');
+    if (!customer.firstName.trim()) newErrors.push('First name is required');
+    if (!customer.lastName.trim()) newErrors.push('Last name is required');
+    if (!customer.email.trim()) newErrors.push('Email is required');
+    if (customer.email && !/\S+@\S+\.\S+/.test(customer.email)) newErrors.push('Please enter a valid email address');
+    if (!shipping.address1.trim()) newErrors.push('Address line 1 is required');
+    if (!shipping.city.trim()) newErrors.push('City is required');
+    if (!shipping.state.trim()) newErrors.push('State is required');
+    if (!shipping.zip.trim()) newErrors.push('ZIP code is required');
+    if (quantity < 1 || quantity > 10) newErrors.push('Quantity must be between 1 and 10');
+    
+    return newErrors;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submission started');
     
-    if (!selectedProduct || !customer.firstName || !customer.email || !shipping.address1) {
+    const formErrors = validateForm();
+    if (formErrors.length > 0) {
+      setErrors(formErrors);
       toast({
-        title: 'Missing Information',
-        description: 'Please fill in all required fields',
+        title: 'Form Validation Error',
+        description: `Please fix the following issues: ${formErrors.join(', ')}`,
         variant: 'destructive',
       });
       return;
     }
 
+    setErrors([]);
+
     try {
       setLoading(true);
+      setUploading(true);
       
+      console.log('Uploading QR code to Printful...');
       // First upload the QR code image to Printful
       const { data: uploadData, error: uploadError } = await supabase.functions.invoke(
         'printful-upload-file',
@@ -175,17 +216,35 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
         }
       );
 
-      if (uploadError) throw uploadError;
+      setUploading(false);
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw new Error(`File upload failed: ${uploadError.message || 'Unknown upload error'}`);
+      }
+
+      if (!uploadData?.fileId) {
+        throw new Error('File upload failed: No file ID returned');
+      }
+
+      console.log('File uploaded successfully, file ID:', uploadData.fileId);
+
+      // Validate variant ID before proceeding
+      if (!selectedVariant || !selectedVariant.id) {
+        throw new Error('Invalid variant selection');
+      }
 
       // Create the order
       const orderItems = [{
         productId: selectedProduct?.toString() || '',
-        variantId: selectedVariant?.id.toString() || '',
+        variantId: selectedVariant.id.toString(),
         quantity,
-        size: selectedVariant?.size || '',
-        material: selectedVariant?.color || '',
+        size: selectedVariant.size || '',
+        material: selectedVariant.color || '',
         unitPrice: calculatePrice(),
       }];
+
+      console.log('Creating order with items:', orderItems);
 
       const { data: orderData, error: orderError } = await supabase.functions.invoke(
         'printful-create-order',
@@ -200,7 +259,12 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
         }
       );
 
-      if (orderError) throw orderError;
+      if (orderError) {
+        console.error('Order creation error:', orderError);
+        throw new Error(`Order creation failed: ${orderError.message || 'Unknown order error'}`);
+      }
+
+      console.log('Order created successfully:', orderData);
 
       toast({
         title: 'Order Created!',
@@ -210,13 +274,16 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
       onClose();
     } catch (error) {
       console.error('Error creating order:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setErrors([errorMessage]);
       toast({
         title: 'Order Failed',
-        description: 'Failed to create your sticker order. Please try again.',
+        description: `Failed to create your sticker order: ${errorMessage}`,
         variant: 'destructive',
       });
     } finally {
       setLoading(false);
+      setUploading(false);
     }
   };
 
@@ -232,6 +299,19 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
           </DialogTitle>
         </DialogHeader>
 
+        {errors.length > 0 && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              <ul className="list-disc list-inside space-y-1">
+                {errors.map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Product Selection */}
           <Card>
@@ -242,53 +322,62 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="product">Product</Label>
-                  <Select 
-                    value={selectedProduct?.toString() || ''} 
-                    onValueChange={(value) => {
-                      const productId = Number(value);
-                      console.log('Product selected:', productId);
-                      setSelectedProduct(productId);
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a product" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {products.map((product) => (
-                        <SelectItem key={product.id} value={product.id.toString()}>
-                          {product.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              {loading && (
+                <div className="flex items-center justify-center p-8">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                  <span className="ml-2">Loading products...</span>
                 </div>
+              )}
+              
+              {!loading && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="product">Product</Label>
+                    <Select 
+                      value={selectedProduct?.toString() || ''} 
+                      onValueChange={(value) => {
+                        const productId = Number(value);
+                        console.log('Product selected:', productId);
+                        setSelectedProduct(productId);
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a product" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {products.map((product) => (
+                          <SelectItem key={product.id} value={product.id.toString()}>
+                            {product.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div>
-                  <Label htmlFor="variant">Variant</Label>
-                  <Select 
-                    value={selectedVariant?.id.toString() || ''} 
-                    onValueChange={(value) => {
-                      const variant = availableVariants.find(v => v.id.toString() === value);
-                      console.log('Variant selected:', variant);
-                      setSelectedVariant(variant || null);
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a variant" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableVariants.map((variant) => (
-                        <SelectItem key={variant.id} value={variant.id.toString()}>
-                          {variant.name} - {variant.size} - ${variant.price}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div>
+                    <Label htmlFor="variant">Variant</Label>
+                    <Select 
+                      value={selectedVariant?.id.toString() || ''} 
+                      onValueChange={(value) => {
+                        const variant = availableVariants.find(v => v.id.toString() === value);
+                        console.log('Variant selected:', variant);
+                        setSelectedVariant(variant || null);
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a variant" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableVariants.map((variant) => (
+                          <SelectItem key={variant.id} value={variant.id.toString()}>
+                            {variant.name} - {variant.size} - ${variant.price}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div>
                 <Label htmlFor="quantity">Quantity (1-10)</Label>
@@ -374,6 +463,25 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
+                <Label htmlFor="country">Country *</Label>
+                <Select 
+                  value={shipping.country} 
+                  onValueChange={(value) => setShipping({ ...shipping, country: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COUNTRIES.map((country) => (
+                      <SelectItem key={country.code} value={country.code}>
+                        {country.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
                 <Label htmlFor="address1">Address Line 1 *</Label>
                 <Input
                   id="address1"
@@ -401,7 +509,7 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
                   />
                 </div>
                 <div>
-                  <Label htmlFor="state">State *</Label>
+                  <Label htmlFor="state">State/Province *</Label>
                   <Input
                     id="state"
                     value={shipping.state}
@@ -410,7 +518,7 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
                   />
                 </div>
                 <div>
-                  <Label htmlFor="zip">ZIP Code *</Label>
+                  <Label htmlFor="zip">ZIP/Postal Code *</Label>
                   <Input
                     id="zip"
                     value={shipping.zip}
@@ -427,10 +535,15 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? (
+              {uploading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing...
+                  Uploading QR Code...
+                </>
+              ) : loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating Order...
                 </>
               ) : (
                 `Order Stickers - $${totalPrice.toFixed(2)}`

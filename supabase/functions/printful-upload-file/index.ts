@@ -30,7 +30,7 @@ serve(async (req) => {
     
     // Create form data for file upload
     const formData = new FormData();
-    formData.append('file', new Blob([binaryData], { type: mimeType }), filename);
+    formData.append('file[]', new Blob([binaryData], { type: mimeType }), filename);
     formData.append('type', 'default');
 
     console.log(`Uploading file to Printful: ${filename}`);

@@ -34,6 +34,7 @@ serve(async (req) => {
     console.log("Creating Printful order for:", customer.email);
 
     // Create customer in our database
+    console.log("Creating/updating customer:", customer.email);
     const { data: customerData, error: customerError } = await supabase
       .from("customers")
       .upsert({
@@ -46,8 +47,11 @@ serve(async (req) => {
       .single();
 
     if (customerError) {
+      console.error("Customer creation error:", customerError);
       throw new Error(`Customer creation failed: ${customerError.message}`);
     }
+
+    console.log("Customer created/updated:", customerData.id);
 
     // Create Printful order
     const printfulOrder = {
@@ -97,6 +101,7 @@ serve(async (req) => {
     );
 
     // Create order in our database
+    console.log("Creating order in database with total cost:", totalCost);
     const { data: orderData, error: orderError } = await supabase
       .from("orders")
       .insert({
@@ -111,8 +116,11 @@ serve(async (req) => {
       .single();
 
     if (orderError) {
+      console.error("Order creation error:", orderError);
       throw new Error(`Order creation failed: ${orderError.message}`);
     }
+
+    console.log("Order created in database:", orderData.id);
 
     // Create order items
     const orderItemsData = orderItems.map((item: any) => ({
@@ -125,13 +133,17 @@ serve(async (req) => {
       unit_price: item.unitPrice,
     }));
 
+    console.log("Creating order items:", orderItemsData.length);
     const { error: itemsError } = await supabase
       .from("order_items")
       .insert(orderItemsData);
 
     if (itemsError) {
+      console.error("Order items creation error:", itemsError);
       throw new Error(`Order items creation failed: ${itemsError.message}`);
     }
+
+    console.log("Order items created successfully");
 
     return new Response(JSON.stringify({ 
       orderId: orderData.id,

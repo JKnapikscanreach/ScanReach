@@ -7,9 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, Download, Printer, Palette, Settings } from 'lucide-react';
+import { Upload, Download, Printer, Palette, Settings, History } from 'lucide-react';
 import { toast } from 'sonner';
 import { StickerOrderModal } from './StickerOrderModal';
+import { OrderHistoryModal } from './OrderHistoryModal';
 
 interface QRConfig {
   url: string;
@@ -36,6 +37,7 @@ const QRGenerator = () => {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoDataUrl, setLogoDataUrl] = useState<string>('');
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [isOrderHistoryModalOpen, setIsOrderHistoryModalOpen] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const onDrop = (acceptedFiles: File[]) => {
@@ -341,7 +343,7 @@ const QRGenerator = () => {
               </CardContent>
             </Card>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-3">
               <Button 
                 onClick={downloadQR}
                 disabled={!qrDataUrl}
@@ -360,6 +362,15 @@ const QRGenerator = () => {
               >
                 <Printer className="w-4 h-4" />
                 Order Stickers
+              </Button>
+
+              <Button 
+                onClick={() => setIsOrderHistoryModalOpen(true)}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <History className="w-4 h-4" />
+                Order History
               </Button>
             </div>
 
@@ -382,6 +393,11 @@ const QRGenerator = () => {
         isOpen={isOrderModalOpen}
         onClose={() => setIsOrderModalOpen(false)}
         qrDataUrl={qrDataUrl}
+      />
+
+      <OrderHistoryModal
+        isOpen={isOrderHistoryModalOpen}
+        onClose={() => setIsOrderHistoryModalOpen(false)}
       />
     </div>
   );
