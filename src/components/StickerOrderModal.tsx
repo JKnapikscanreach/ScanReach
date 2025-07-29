@@ -123,9 +123,14 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
   };
 
   const calculatePrice = () => {
-    if (!selectedVariant) return 0;
+    console.log('calculatePrice called', { selectedVariant, quantity });
+    if (!selectedVariant) {
+      console.log('No selectedVariant, returning 0');
+      return 0;
+    }
     
     let basePrice = parseFloat(selectedVariant.price);
+    console.log('Base price from variant:', basePrice);
     
     // Quantity discounts (same as before for now)
     if (quantity >= 500) basePrice *= 0.7;
@@ -134,7 +139,9 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
     else if (quantity >= 50) basePrice *= 0.85;
     
     // Add markup (50%)
-    return Math.ceil(basePrice * 1.5 * 100) / 100;
+    const finalPrice = Math.ceil(basePrice * 1.5 * 100) / 100;
+    console.log('Final calculated price:', finalPrice);
+    return finalPrice;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
