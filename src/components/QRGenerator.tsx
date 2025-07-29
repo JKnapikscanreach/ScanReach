@@ -315,7 +315,7 @@ const QRGenerator = () => {
                   <li>• Weather-resistant vinyl</li>
                   <li>• Custom sizes available</li>
                   <li>• Fast shipping worldwide</li>
-                  <li>• Starting at $9.99 for 25 stickers</li>
+                  <li>• Cost effective, no minimums</li>
                 </ul>
               </CardContent>
             </Card>
