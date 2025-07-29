@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Package, Truck, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { FileUploadDebugger } from './FileUploadDebugger';
 
 interface StickerOrderModalProps {
   isOpen: boolean;
@@ -91,6 +92,7 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
     country: 'US',
     phone: '',
   });
+  const [debugMode, setDebugMode] = useState(false);
 
   const currentProduct = products.find(p => p.id === selectedProduct);
   const availableVariants = currentProduct?.variants?.filter(v => v.in_stock) || [];
@@ -315,6 +317,14 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
             Order Custom QR Code Stickers
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDebugMode(!debugMode)}
+              className="ml-auto text-xs"
+            >
+              {debugMode ? 'Hide' : 'Show'} Debug
+            </Button>
           </DialogTitle>
         </DialogHeader>
 
@@ -329,6 +339,10 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
               </ul>
             </AlertDescription>
           </Alert>
+        )}
+
+        {debugMode && (
+          <FileUploadDebugger qrDataUrl={qrDataUrl} />
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
