@@ -25,7 +25,7 @@ const QRGenerator = () => {
     url: '',
     size: 512,
     errorCorrectionLevel: 'M',
-    foregroundColor: '#000000',
+    foregroundColor: bg-gray-300,
     backgroundColor: '#ffffff',
     logoSize: 20,
     margin: 4
@@ -314,8 +314,8 @@ const QRGenerator = () => {
                 <ul className="text-sm text-muted-foreground space-y-1">
                   <li>• Weather-resistant vinyl</li>
                   <li>• Custom sizes available</li>
-                  <li>• Fast shipping worldwide</li>
-                  <li>• Starting at $9.99 for 25 stickers</li>
+                  <li>• Fast shipping</li>
+                  <li>• Low price</li>
                 </ul>
               </CardContent>
             </Card>
