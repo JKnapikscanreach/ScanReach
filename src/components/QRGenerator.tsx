@@ -133,7 +133,7 @@ const QRGenerator = () => {
       generateQR();
     }
   }, [config, logoDataUrl]);
-  return <div className="min-h-screen p-6 bg-gray-200">
+  return <div className="min-h-screen p-6 bg-background">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-4">
