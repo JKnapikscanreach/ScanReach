@@ -135,6 +135,98 @@ export type Database = {
           },
         ]
       }
+      sync_products: {
+        Row: {
+          catalog_product_id: string
+          created_at: string
+          id: string
+          name: string
+          printful_sync_product_id: string
+          updated_at: string
+        }
+        Insert: {
+          catalog_product_id: string
+          created_at?: string
+          id?: string
+          name: string
+          printful_sync_product_id: string
+          updated_at?: string
+        }
+        Update: {
+          catalog_product_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          printful_sync_product_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sync_variants: {
+        Row: {
+          catalog_variant_id: string
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+          printful_sync_variant_id: string
+          size: string | null
+          sync_product_id: string
+          updated_at: string
+        }
+        Insert: {
+          catalog_variant_id: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          printful_sync_variant_id: string
+          size?: string | null
+          sync_product_id: string
+          updated_at?: string
+        }
+        Update: {
+          catalog_variant_id?: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          printful_sync_variant_id?: string
+          size?: string | null
+          sync_product_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_variants_sync_product_id_fkey"
+            columns: ["sync_product_id"]
+            isOneToOne: false
+            referencedRelation: "sync_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      variant_mappings: {
+        Row: {
+          catalog_variant_id: string
+          created_at: string
+          id: string
+          sync_variant_id: string
+        }
+        Insert: {
+          catalog_variant_id: string
+          created_at?: string
+          id?: string
+          sync_variant_id: string
+        }
+        Update: {
+          catalog_variant_id?: string
+          created_at?: string
+          id?: string
+          sync_variant_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -6,10 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useDebug } from '@/contexts/DebugContext';
+import { createDebugClient } from '@/integrations/supabase/debugClient';
 import { Loader2, Package, Truck, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { FileUploadDebugger } from './FileUploadDebugger';
 
 interface StickerOrderModalProps {
   isOpen: boolean;
@@ -73,6 +73,7 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
   qrDataUrl,
 }) => {
   const { toast } = useToast();
+  const { addEntry } = useDebug();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
@@ -92,12 +93,9 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
     country: 'US',
     phone: '',
   });
-  const [debugMode, setDebugMode] = useState(false);
 
   const currentProduct = products.find(p => p.id === selectedProduct);
   const availableVariants = currentProduct?.variants?.filter(v => v.in_stock) || [];
-  
-  console.log('Current state:', { selectedProduct, currentProduct, availableVariants: availableVariants.length });
 
   useEffect(() => {
     if (isOpen) {
@@ -107,34 +105,28 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
   }, [isOpen]);
 
   useEffect(() => {
-    // Reset and auto-select first available variant when product changes
     if (currentProduct && availableVariants.length > 0) {
-      console.log('Setting first variant for product:', currentProduct.title);
       setSelectedVariant(availableVariants[0]);
     } else {
       setSelectedVariant(null);
     }
-  }, [selectedProduct]); // Only depend on selectedProduct to avoid race conditions
+  }, [selectedProduct]);
 
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      console.log('Fetching products from Printful...');
+      const supabase = createDebugClient(addEntry);
       const { data, error } = await supabase.functions.invoke('printful-products');
       
       if (error) {
-        console.error('Supabase function error:', error);
         throw error;
       }
       
-      console.log('Fetched products:', data?.products);
       setProducts(data?.products || []);
       if (data?.products?.length > 0) {
-        console.log('Auto-selecting first product:', data.products[0]);
         setSelectedProduct(data.products[0].id);
       }
     } catch (error) {
-      console.error('Error fetching products:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       setErrors([`Failed to fetch available products: ${errorMessage}`]);
       toast({
@@ -148,19 +140,8 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
   };
 
   const calculatePrice = () => {
-    console.log('calculatePrice called', { selectedVariant, quantity });
-    if (!selectedVariant) {
-      console.log('No selectedVariant, returning 0');
-      return 0;
-    }
-    
-    // Use the actual Printful price without arbitrary markups
-    const basePrice = parseFloat(selectedVariant.price);
-    console.log('Base price from variant:', basePrice);
-    
-    // Return the actual price - no artificial markups
-    console.log('Final calculated price:', basePrice);
-    return basePrice;
+    if (!selectedVariant) return 0;
+    return parseFloat(selectedVariant.price);
   };
 
   const validateForm = (): boolean => {
@@ -184,26 +165,14 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) {
-      return;
-    }
-
-    if (!selectedProduct || !selectedVariant) {
-      toast({
-        title: "Invalid selection",
-        description: "Please select a product and variant",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!validateForm()) return;
 
     setUploading(true);
     
     try {
-      console.log('Starting order submission process...');
+      const supabase = createDebugClient(addEntry);
       
-      // Upload QR code to Printful with retry logic
-      console.log('Uploading QR code...');
+      // Upload QR code
       const uploadResponse = await supabase.functions.invoke('printful-upload-file', {
         body: { 
           imageDataUrl: qrDataUrl, 
@@ -212,20 +181,16 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
       });
 
       if (uploadResponse.error) {
-        console.error('Upload error:', uploadResponse.error);
         throw new Error(uploadResponse.error.message || 'Failed to upload QR code');
       }
 
-      const { fileId, fileUrl } = uploadResponse.data;
-      console.log('QR code uploaded successfully:', { fileId, fileUrl });
-
+      const { fileId } = uploadResponse.data;
       if (!fileId) {
         throw new Error('Upload succeeded but no file ID returned');
       }
 
       setLoading(true);
       
-      // Prepare order data with validation
       const orderData = {
         customer: {
           firstName: customerInfo.name.split(' ')[0] || customerInfo.name,
@@ -234,11 +199,11 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
           phone: shippingAddress.phone || '',
         },
         orderItems: [{
-          productId: selectedProduct.toString(),
-          variantId: selectedVariant.id.toString(),
+          productId: selectedProduct?.toString(),
+          variantId: selectedVariant?.id.toString(),
           quantity: parseInt(quantity.toString()),
-          size: selectedVariant.size || '',
-          material: selectedVariant.color || '',
+          size: selectedVariant?.size || '',
+          material: selectedVariant?.color || '',
           unitPrice: parseFloat(calculatePrice().toFixed(2)),
         }],
         fileId,
@@ -252,47 +217,31 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
           zip: shippingAddress.zip.trim(),
         }
       };
-
-      console.log('Creating order with data:', {
-        customer: orderData.customer.email,
-        items: orderData.orderItems.length,
-        fileId: orderData.fileId
-      });
       
-      // Create order
       const orderResponse = await supabase.functions.invoke('printful-create-order', {
         body: orderData
       });
 
       if (orderResponse.error) {
-        console.error('Order creation error:', orderResponse.error);
         throw new Error(orderResponse.error.message || 'Failed to create order');
       }
 
-      const { orderId, printfulOrderId } = orderResponse.data;
-      console.log('Order created successfully:', { orderId, printfulOrderId });
+      const { orderId } = orderResponse.data;
 
       toast({
         title: "Order placed successfully!",
         description: `Your sticker order has been submitted. Order ID: ${orderId}`,
       });
 
-      // Reset form and close modal
+      // Reset form
       setCustomerInfo({ name: '', email: '' });
       setShippingAddress({
-        address1: '',
-        city: '',
-        state: '',
-        country: 'US',
-        zip: '',
-        phone: ''
+        address1: '', city: '', state: '', country: 'US', zip: '', phone: ''
       });
       setQuantity(1);
       onClose();
       
     } catch (error) {
-      console.error('Order submission error:', error);
-      
       const errorMessage = error instanceof Error 
         ? error.message 
         : "An unexpected error occurred while placing your order";
@@ -317,14 +266,6 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
             Order Custom QR Code Stickers
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setDebugMode(!debugMode)}
-              className="ml-auto text-xs"
-            >
-              {debugMode ? 'Hide' : 'Show'} Debug
-            </Button>
           </DialogTitle>
         </DialogHeader>
 
@@ -341,18 +282,10 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
           </Alert>
         )}
 
-        {debugMode && (
-          <FileUploadDebugger qrDataUrl={qrDataUrl} />
-        )}
-
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Product Selection */}
           <Card>
             <CardHeader>
               <CardTitle>Product Options</CardTitle>
-              <CardDescription>
-                Choose your sticker specifications
-              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {loading && (
@@ -368,11 +301,7 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
                     <Label htmlFor="product">Product</Label>
                     <Select 
                       value={selectedProduct?.toString() || ''} 
-                      onValueChange={(value) => {
-                        const productId = Number(value);
-                        console.log('Product selected:', productId);
-                        setSelectedProduct(productId);
-                      }}
+                      onValueChange={(value) => setSelectedProduct(Number(value))}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select a product" />
@@ -393,7 +322,6 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
                       value={selectedVariant?.id.toString() || ''} 
                       onValueChange={(value) => {
                         const variant = availableVariants.find(v => v.id.toString() === value);
-                        console.log('Variant selected:', variant);
                         setSelectedVariant(variant || null);
                       }}
                     >
@@ -420,11 +348,7 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
                   min="1"
                   max="10"
                   value={quantity}
-                  onChange={(e) => {
-                    const value = Math.max(1, Math.min(10, Number(e.target.value)));
-                    setQuantity(value);
-                  }}
-                  className="w-full"
+                  onChange={(e) => setQuantity(Math.max(1, Math.min(10, Number(e.target.value))))}
                 />
               </div>
 
@@ -432,44 +356,38 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
                 <div className="text-lg font-semibold">
                   Total: ${totalPrice.toFixed(2)}
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  ${calculatePrice().toFixed(2)} per sticker × {quantity} stickers
-                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Customer Information */}
+          {/* Customer and Shipping forms... */}
           <Card>
             <CardHeader>
               <CardTitle>Customer Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <Label htmlFor="name">Full Name *</Label>
-                  <Input
-                    id="name"
-                    value={customerInfo.name}
-                    onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="email">Email *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={customerInfo.email}
-                    onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
-                    required
-                  />
-                </div>
+              <div>
+                <Label htmlFor="name">Full Name *</Label>
+                <Input
+                  id="name"
+                  value={customerInfo.name}
+                  onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="email">Email *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={customerInfo.email}
+                  onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
+                  required
+                />
               </div>
             </CardContent>
           </Card>
 
-          {/* Shipping Address */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -506,17 +424,8 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
                   required
                 />
               </div>
-              
-              <div>
-                <Label htmlFor="phone">Phone (Optional)</Label>
-                <Input
-                  id="phone"
-                  value={shippingAddress.phone || ''}
-                  onChange={(e) => setShippingAddress({ ...shippingAddress, phone: e.target.value })}
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="city">City *</Label>
                   <Input
@@ -527,7 +436,7 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
                   />
                 </div>
                 <div>
-                  <Label htmlFor="state">State/Province *</Label>
+                  <Label htmlFor="state">State *</Label>
                   <Input
                     id="state"
                     value={shippingAddress.state}
@@ -535,8 +444,11 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
                     required
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="zip">ZIP/Postal Code *</Label>
+                  <Label htmlFor="zip">ZIP Code *</Label>
                   <Input
                     id="zip"
                     value={shippingAddress.zip}
@@ -544,19 +456,32 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
                     required
                   />
                 </div>
+                <div>
+                  <Label htmlFor="phone">Phone (Optional)</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={shippingAddress.phone}
+                    onChange={(e) => setShippingAddress({ ...shippingAddress, phone: e.target.value })}
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <div className="flex justify-end gap-3">
+          <div className="flex justify-between items-center">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button 
+              type="submit" 
+              disabled={uploading || loading}
+              className="min-w-32"
+            >
               {uploading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Uploading QR Code...
+                  Uploading...
                 </>
               ) : loading ? (
                 <>
@@ -564,7 +489,7 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
                   Creating Order...
                 </>
               ) : (
-                `Order Stickers - $${totalPrice.toFixed(2)}`
+                `Place Order - $${totalPrice.toFixed(2)}`
               )}
             </Button>
           </div>
