@@ -13,52 +13,89 @@ serve(async (req) => {
 
   try {
     const printfulToken = Deno.env.get("PRINTFUL_API_TOKEN");
-    if (!printfulToken) {
-      throw new Error("PRINTFUL_API_TOKEN not configured");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (!printfulToken || !supabaseUrl || !supabaseServiceKey) {
+      console.error("Missing environment variables:", {
+        printfulToken: !!printfulToken,
+        supabaseUrl: !!supabaseUrl,
+        supabaseServiceKey: !!supabaseServiceKey
+      });
+      throw new Error("Missing required environment variables");
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
-    );
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false }
+    });
 
+    const requestData = await req.json();
     const { 
       customer, 
       orderItems, 
       fileId, 
       qrDataUrl, 
       shippingAddress 
-    } = await req.json();
+    } = requestData;
 
-    console.log("Creating Printful order for:", customer.email);
+    console.log("Creating order for customer:", customer?.email);
+    console.log("Order items count:", orderItems?.length);
+    console.log("File ID:", fileId);
 
-    // Create customer in our database
-    console.log("Creating/updating customer:", customer.email);
-    const { data: customerData, error: customerError } = await supabase
-      .from("customers")
-      .upsert({
-        email: customer.email,
-        first_name: customer.firstName,
-        last_name: customer.lastName,
-        phone: customer.phone,
-      }, { onConflict: 'email' })
-      .select()
-      .single();
-
-    if (customerError) {
-      console.error("Customer creation error:", customerError);
-      throw new Error(`Customer creation failed: ${customerError.message}`);
+    // Validate required fields
+    if (!customer?.firstName || !customer?.lastName || !customer?.email) {
+      throw new Error("Customer first name, last name, and email are required");
     }
 
-    console.log("Customer created/updated:", customerData.id);
+    if (!orderItems || !Array.isArray(orderItems) || orderItems.length === 0) {
+      throw new Error("At least one order item is required");
+    }
 
-    // Create Printful order
+    if (!fileId) {
+      throw new Error("File ID is required");
+    }
+
+    if (!shippingAddress) {
+      throw new Error("Shipping address is required");
+    }
+
+    // Create or update customer with better error handling
+    console.log("Creating/updating customer:", customer.email);
+    
+    let customerData;
+    try {
+      const { data: dbCustomer, error: customerError } = await supabase
+        .from("customers")
+        .upsert({
+          email: customer.email.trim().toLowerCase(),
+          first_name: customer.firstName.trim(),
+          last_name: customer.lastName.trim(),
+          phone: customer.phone?.trim() || "",
+        }, { onConflict: 'email' })
+        .select()
+        .single();
+
+      if (customerError) {
+        console.error("Customer upsert error:", customerError);
+        throw new Error(`Failed to create customer: ${customerError.message}`);
+      }
+
+      customerData = dbCustomer;
+      console.log("Customer created/updated successfully:", customerData.id);
+    } catch (error) {
+      console.error("Database error during customer creation:", error);
+      throw new Error(`Database error: ${error.message}`);
+    }
+
+    // Create order with Printful with enhanced validation and error handling
+    const externalId = `order-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
     const printfulOrder = {
+      external_id: externalId,
       recipient: {
         name: `${customer.firstName} ${customer.lastName}`,
         email: customer.email,
-        phone: customer.phone,
+        phone: customer.phone || "",
         address1: shippingAddress.address1,
         address2: shippingAddress.address2 || "",
         city: shippingAddress.city,
@@ -66,84 +103,149 @@ serve(async (req) => {
         country_code: shippingAddress.country,
         zip: shippingAddress.zip,
       },
-      items: orderItems.map((item: any) => ({
-        sync_variant_id: item.variantId,
-        quantity: item.quantity,
-        files: [
-          {
-            type: "default",
-            id: fileId,
-          },
-        ],
-      })),
+      items: orderItems.map((item: any) => {
+        if (!item.variantId || !item.quantity) {
+          throw new Error(`Invalid order item: missing variantId or quantity`);
+        }
+        
+        return {
+          sync_variant_id: parseInt(item.variantId),
+          quantity: parseInt(item.quantity),
+          files: [{ type: "default", id: fileId }]
+        };
+      })
     };
 
-    const printfulResponse = await fetch("https://api.printful.com/orders", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${printfulToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(printfulOrder),
-    });
+    console.log("Creating order with Printful:");
+    console.log("External ID:", externalId);
+    console.log("Recipient:", printfulOrder.recipient);
+    console.log("Items:", printfulOrder.items);
 
-    if (!printfulResponse.ok) {
-      const errorData = await printfulResponse.text();
-      throw new Error(`Printful order creation failed: ${printfulResponse.status} - ${errorData}`);
+    let printfulData;
+    try {
+      const printfulResponse = await fetch("https://api.printful.com/orders", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${printfulToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(printfulOrder),
+      });
+
+      console.log("Printful response status:", printfulResponse.status);
+
+      if (!printfulResponse.ok) {
+        const errorData = await printfulResponse.text();
+        console.error("Printful order creation failed:", errorData);
+        
+        // Try to parse error details
+        try {
+          const errorJson = JSON.parse(errorData);
+          const errorMessage = errorJson.error?.message || errorJson.result || errorData;
+          throw new Error(`Printful order creation failed: ${errorMessage}`);
+        } catch {
+          throw new Error(`Printful order creation failed: ${printfulResponse.status} - ${errorData}`);
+        }
+      }
+
+      printfulData = await printfulResponse.json();
+      console.log("Printful order created successfully:", {
+        id: printfulData.result?.id,
+        external_id: printfulData.result?.external_id,
+        status: printfulData.result?.status
+      });
+
+      if (!printfulData.result?.id) {
+        throw new Error("Printful order created but no ID returned");
+      }
+
+    } catch (error) {
+      console.error("Error during Printful order creation:", error.message);
+      throw new Error(`Failed to create order with Printful: ${error.message}`);
     }
 
-    const printfulData = await printfulResponse.json();
-    console.log("Printful order created:", printfulData.result.id);
+    // Calculate total cost with validation
+    const totalCost = orderItems.reduce((sum: number, item: any) => {
+      const itemPrice = parseFloat(item.unitPrice) || 0;
+      const itemQuantity = parseInt(item.quantity) || 0;
+      return sum + (itemPrice * itemQuantity);
+    }, 0);
 
-    // Calculate total cost
-    const totalCost = orderItems.reduce((sum: number, item: any) => 
-      sum + (item.unitPrice * item.quantity), 0
-    );
+    console.log("Calculated total cost:", totalCost);
 
-    // Create order in our database
-    console.log("Creating order in database with total cost:", totalCost);
-    const { data: orderData, error: orderError } = await supabase
-      .from("orders")
-      .insert({
-        customer_id: customerData.id,
-        printful_order_id: printfulData.result.id.toString(),
-        status: 'pending',
-        total_cost: totalCost,
-        shipping_address: shippingAddress,
-        qr_data_url: qrDataUrl,
-      })
-      .select()
-      .single();
-
-    if (orderError) {
-      console.error("Order creation error:", orderError);
-      throw new Error(`Order creation failed: ${orderError.message}`);
+    if (totalCost <= 0) {
+      throw new Error("Invalid order total: must be greater than 0");
     }
 
-    console.log("Order created in database:", orderData.id);
+    // Store order in database with transaction-like behavior
+    let orderData;
+    try {
+      console.log("Storing order in database...");
+      
+      const { data: dbOrder, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          customer_id: customerData.id,
+          printful_order_id: printfulData.result.id.toString(),
+          external_id: printfulData.result.external_id || externalId,
+          status: printfulData.result.status || 'pending',
+          total_cost: totalCost,
+          shipping_address: shippingAddress,
+          qr_data_url: qrDataUrl,
+        })
+        .select()
+        .single();
 
-    // Create order items
-    const orderItemsData = orderItems.map((item: any) => ({
-      order_id: orderData.id,
-      product_id: item.productId,
-      variant_id: item.variantId,
-      quantity: item.quantity,
-      size: item.size,
-      material: item.material,
-      unit_price: item.unitPrice,
-    }));
+      if (orderError) {
+        console.error("Order storage error:", orderError);
+        throw new Error(`Failed to store order: ${orderError.message}`);
+      }
 
-    console.log("Creating order items:", orderItemsData.length);
-    const { error: itemsError } = await supabase
-      .from("order_items")
-      .insert(orderItemsData);
+      orderData = dbOrder;
+      console.log("Order stored successfully:", orderData.id);
 
-    if (itemsError) {
-      console.error("Order items creation error:", itemsError);
-      throw new Error(`Order items creation failed: ${itemsError.message}`);
+    } catch (error) {
+      console.error("Database error during order storage:", error);
+      throw new Error(`Database error storing order: ${error.message}`);
     }
 
-    console.log("Order items created successfully");
+    // Store order items with validation
+    try {
+      console.log("Storing order items...");
+      
+      const orderItemsData = orderItems.map((item: any, index: number) => {
+        if (!item.variantId || !item.quantity || !item.unitPrice) {
+          throw new Error(`Invalid order item at index ${index}: missing required fields`);
+        }
+        
+        return {
+          order_id: orderData.id,
+          product_id: item.productId?.toString() || '',
+          variant_id: item.variantId.toString(),
+          quantity: parseInt(item.quantity),
+          size: item.size || '',
+          material: item.material || '',
+          unit_price: parseFloat(item.unitPrice),
+        };
+      });
+
+      const { error: itemsError } = await supabase
+        .from("order_items")
+        .insert(orderItemsData);
+
+      if (itemsError) {
+        console.error("Order items storage error:", itemsError);
+        throw new Error(`Failed to store order items: ${itemsError.message}`);
+      }
+
+      console.log(`Stored ${orderItemsData.length} order items successfully`);
+
+    } catch (error) {
+      console.error("Error storing order items:", error);
+      // Note: At this point the Printful order exists, so we should log this for manual cleanup
+      console.error("CRITICAL: Order items failed to store for Printful order:", printfulData.result.id);
+      throw new Error(`Failed to store order items: ${error.message}`);
+    }
 
     return new Response(JSON.stringify({ 
       orderId: orderData.id,
