@@ -244,9 +244,24 @@ serve(async (req) => {
 
     } catch (error) {
       console.error("Error storing order items:", error);
-      // Note: At this point the Printful order exists, so we should log this for manual cleanup
+      
+      // Critical error: Printful order exists but we can't store items locally
+      // Log this for manual cleanup and attempt to delete the local order record
       console.error("CRITICAL: Order items failed to store for Printful order:", printfulData.result.id);
-      throw new Error(`Failed to store order items: ${error.message}`);
+      console.error("CRITICAL: Local order ID that needs cleanup:", orderData.id);
+      
+      // Attempt to clean up the local order since we can't store the items
+      try {
+        await supabase
+          .from("orders")
+          .delete()
+          .eq("id", orderData.id);
+        console.log("Cleaned up local order record due to order items failure");
+      } catch (cleanupError) {
+        console.error("Failed to cleanup local order record:", cleanupError);
+      }
+      
+      throw new Error(`Failed to store order items: ${error.message}. Printful order ${printfulData.result.id} may need manual cleanup.`);
     }
 
     return new Response(JSON.stringify({ 

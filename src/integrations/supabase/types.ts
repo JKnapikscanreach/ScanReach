@@ -93,6 +93,7 @@ export type Database = {
           created_at: string
           currency: string
           customer_id: string
+          external_id: string | null
           id: string
           printful_order_id: string | null
           qr_data_url: string
@@ -105,6 +106,7 @@ export type Database = {
           created_at?: string
           currency?: string
           customer_id: string
+          external_id?: string | null
           id?: string
           printful_order_id?: string | null
           qr_data_url: string
@@ -117,6 +119,7 @@ export type Database = {
           created_at?: string
           currency?: string
           customer_id?: string
+          external_id?: string | null
           id?: string
           printful_order_id?: string | null
           qr_data_url?: string
