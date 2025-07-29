@@ -1,1 +1,13 @@
 project_id = "omglnkwppbzviojlnlxm"
+
+[functions.printful-products]
+verify_jwt = false
+
+[functions.printful-upload-file]
+verify_jwt = false
+
+[functions.printful-create-order]
+verify_jwt = false
+
+[functions.printful-order-status]
+verify_jwt = false

@@ -9,6 +9,7 @@ import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Upload, Download, Printer, Palette, Settings } from 'lucide-react';
 import { toast } from 'sonner';
+import { StickerOrderModal } from './StickerOrderModal';
 
 interface QRConfig {
   url: string;
@@ -34,6 +35,7 @@ const QRGenerator = () => {
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoDataUrl, setLogoDataUrl] = useState<string>('');
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const onDrop = (acceptedFiles: File[]) => {
@@ -126,12 +128,12 @@ const QRGenerator = () => {
 
   const orderStickers = () => {
     if (!qrDataUrl) {
-      toast.error('Please generate a QR code first');
-      return;
+      generateQR().then(() => {
+        setIsOrderModalOpen(true);
+      });
+    } else {
+      setIsOrderModalOpen(true);
     }
-    
-    // This would integrate with a printing service
-    toast.success('Redirecting to sticker printing service...');
   };
 
   useEffect(() => {
@@ -375,6 +377,12 @@ const QRGenerator = () => {
           </div>
         </div>
       </div>
+
+      <StickerOrderModal
+        isOpen={isOrderModalOpen}
+        onClose={() => setIsOrderModalOpen(false)}
+        qrDataUrl={qrDataUrl}
+      />
     </div>
   );
 };
