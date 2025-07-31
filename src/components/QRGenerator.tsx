@@ -326,6 +326,6 @@ const QRGenerator = () => {
       <StickerOrderModal isOpen={isOrderModalOpen} onClose={() => setIsOrderModalOpen(false)} qrDataUrl={qrDataUrl} />
 
       <OrderHistoryModal isOpen={isOrderHistoryModalOpen} onClose={() => setIsOrderHistoryModalOpen(false)} />
-    </div>;
+    </div>
 };
 export default QRGenerator;
