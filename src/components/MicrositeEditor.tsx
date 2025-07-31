@@ -149,12 +149,12 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
     <div className="flex h-screen bg-background">
       {/* Editor Panel */}
       <div className="flex-1 overflow-auto border-r">
-        <div className="p-6 space-y-6">
+        <div className="p-4 space-y-4">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold">Edit Microsite</h1>
-              <p className="text-muted-foreground">
+              <h1 className="text-xl font-bold">Edit Microsite</h1>
+              <p className="text-sm text-muted-foreground">
                 Create and customize your microsite content
               </p>
             </div>
@@ -164,23 +164,24 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
                   Auto-saving...
                 </Badge>
               )}
-              <Button variant="outline" onClick={handleSave}>
+              <Button variant="outline" onClick={handleSave} size="sm">
                 <Save className="h-4 w-4 mr-2" />
                 Save
               </Button>
-              <Button onClick={handlePublish}>
+              <Button onClick={handlePublish} size="sm">
                 <Eye className="h-4 w-4 mr-2" />
                 Publish
               </Button>
             </div>
           </div>
 
-          {/* Title Input */}
+          {/* Combined Title and Header Image */}
           <Card>
-            <CardHeader>
-              <CardTitle>Microsite Title</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle>Microsite Title & Header Image</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              {/* Title Input */}
               <div className="space-y-2">
                 <Label htmlFor="title">Title (max 60 characters)</Label>
                 <Input
@@ -194,30 +195,20 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
                   {title.length}/60 characters
                 </div>
               </div>
+
+              {/* Header Image Upload - Embedded */}
+              {content && (
+                <HeaderImageUpload
+                  micrositeId={micrositeId}
+                  currentImageUrl={content.header_image_url}
+                  onImageUpdate={(url) => updateContent({ header_image_url: url })}
+                />
+              )}
             </CardContent>
           </Card>
 
-          {/* Header Image Upload */}
-          {content && (
-            <HeaderImageUpload
-              micrositeId={micrositeId}
-              currentImageUrl={content.header_image_url}
-              onImageUpdate={(url) => updateContent({ header_image_url: url })}
-            />
-          )}
-
-          {/* Theme Customizer */}
-          {content && (
-            <ThemeCustomizer
-              themeConfig={content.theme_config}
-              onThemeUpdate={(theme) => updateContent({ theme_config: theme })}
-            />
-          )}
-
-          <Separator />
-
           {/* Content Cards */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">Content Cards</h3>
               <Button onClick={handleAddCard} size="sm">
@@ -229,7 +220,7 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
             <DragDropContext onDragEnd={handleDragEnd}>
               <Droppable droppableId="cards">
                 {(provided) => (
-                  <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
+                  <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-3">
                     {cards.map((card, index) => (
                       <Draggable key={card.id} draggableId={card.id} index={index}>
                         {(provided, snapshot) => (
@@ -241,7 +232,7 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
                             }`}
                           >
                             {/* Card Header */}
-                            <div className="flex items-center justify-between p-4 border-b">
+                            <div className="flex items-center justify-between p-3 border-b">
                               <div className="flex items-center gap-2">
                                 <div
                                   {...provided.dragHandleProps}
@@ -276,7 +267,7 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
 
                             {/* Card Content */}
                             {expandedCards.has(card.id) && (
-                              <div className="p-4">
+                              <div className="p-3">
                                 <MicrositeCardEditor
                                   card={card}
                                   onUpdate={(updates) => updateCard(card.id, updates)}
@@ -297,15 +288,23 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
             </DragDropContext>
 
             {cards.length === 0 && (
-              <div className="text-center py-12 text-muted-foreground">
-                <p className="mb-4">No content cards yet</p>
-                <Button onClick={handleAddCard} variant="outline">
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="mb-3">No content cards yet</p>
+                <Button onClick={handleAddCard} variant="outline" size="sm">
                   <Plus className="h-4 w-4 mr-2" />
                   Add your first card
                 </Button>
               </div>
             )}
           </div>
+
+          {/* Theme Customizer - Moved to bottom */}
+          {content && (
+            <ThemeCustomizer
+              themeConfig={content.theme_config}
+              onThemeUpdate={(theme) => updateContent({ theme_config: theme })}
+            />
+          )}
         </div>
       </div>
 

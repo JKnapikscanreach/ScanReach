@@ -127,87 +127,72 @@ export const HeaderImageUpload: React.FC<HeaderImageUploadProps> = ({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <ImageIcon className="h-5 w-5" />
-          Header Image
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Current Image */}
-        {currentImageUrl && (
-          <div className="space-y-2">
-            <Label>Current Image</Label>
-            <div className="relative group">
-              <div className="aspect-[3/1] bg-gray-100 rounded-lg overflow-hidden">
-                <img
-                  src={currentImageUrl}
-                  alt="Header"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <Button
-                variant="destructive"
-                size="sm"
-                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={handleRemoveImage}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Upload Area */}
+    <div className="space-y-3">
+      {/* Current Image */}
+      {currentImageUrl && (
         <div className="space-y-2">
-          <Label>Upload New Image</Label>
-          <div
-            {...getRootProps()}
-            className={`
-              border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
-              ${isDragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'}
-              ${uploading ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary hover:bg-primary/5'}
-            `}
-          >
-            <input {...getInputProps()} />
-            <div className="space-y-2">
-              <Upload className="h-8 w-8 mx-auto text-muted-foreground" />
-              {uploading ? (
-                <p className="text-sm text-muted-foreground">Uploading...</p>
-              ) : (
-                <>
-                  <p className="text-sm text-muted-foreground">
-                    {isDragActive
-                      ? 'Drop the image here...'
-                      : 'Drag & drop an image here, or click to select'
-                    }
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    JPG or PNG only, max 1MB • Recommended ratio 3:1
-                  </p>
-                </>
-              )}
+          <Label>Current Header Image</Label>
+          <div className="relative group">
+            <div className="aspect-[3/1] bg-gray-100 rounded-lg overflow-hidden">
+              <img
+                src={currentImageUrl}
+                alt="Header"
+                className="w-full h-full object-cover"
+              />
             </div>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={handleRemoveImage}
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
         </div>
+      )}
 
-        {/* Upload Error */}
-        {uploadError && (
-          <div className="flex items-center gap-2 text-sm text-destructive">
-            <AlertCircle className="h-4 w-4" />
-            {uploadError}
+      {/* Upload Area */}
+      <div className="space-y-2">
+        <Label>Upload Header Image</Label>
+        <div
+          {...getRootProps()}
+          className={`
+            border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors
+            ${isDragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'}
+            ${uploading ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary hover:bg-primary/5'}
+          `}
+        >
+          <input {...getInputProps()} />
+          <div className="space-y-2">
+            <ImageIcon className="h-6 w-6 mx-auto text-muted-foreground" />
+            {uploading ? (
+              <p className="text-sm text-muted-foreground">Uploading...</p>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  {isDragActive
+                    ? 'Drop the image here...'
+                    : 'Drag & drop an image here, or click to select'
+                  }
+                </p>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p>JPG or PNG only, max 1MB • Recommended ratio 3:1</p>
+                  <p>Image appears above the first content card</p>
+                </div>
+              </>
+            )}
           </div>
-        )}
-
-        {/* Guidelines */}
-        <div className="text-xs text-muted-foreground space-y-1">
-          <p>• Image appears above the first content card</p>
-          <p>• Recommended aspect ratio: 3:1 (wide)</p>
-          <p>• Maximum file size: 1MB</p>
-          <p>• Supported formats: JPG, PNG</p>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Upload Error */}
+      {uploadError && (
+        <div className="flex items-center gap-2 text-sm text-destructive">
+          <AlertCircle className="h-4 w-4" />
+          {uploadError}
+        </div>
+      )}
+    </div>
   );
 };

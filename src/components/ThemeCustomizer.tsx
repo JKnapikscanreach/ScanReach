@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Palette } from 'lucide-react';
 
 interface ThemeConfig {
@@ -22,12 +23,15 @@ export const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
   onThemeUpdate,
 }) => {
   const [activeColorPicker, setActiveColorPicker] = useState<string | null>(null);
+  const [selectedPreset, setSelectedPreset] = useState<string>('user-defined');
 
   const handleColorChange = (colorType: keyof ThemeConfig, color: ColorResult) => {
-    onThemeUpdate({
+    const newTheme = {
       ...themeConfig,
       [colorType]: color.hex,
-    });
+    };
+    onThemeUpdate(newTheme);
+    setSelectedPreset('user-defined');
   };
 
   const isDarkColor = (color: string): boolean => {
@@ -126,44 +130,128 @@ export const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
 
   const presetThemes = [
     {
+      id: 'classic',
       name: 'Classic',
       colors: { primary: '#1a1a1a', text: '#1a1a1a', background: '#ffffff' }
     },
     {
+      id: 'ocean',
       name: 'Ocean',
       colors: { primary: '#0369a1', text: '#1e293b', background: '#f8fafc' }
     },
     {
+      id: 'forest',
       name: 'Forest',
       colors: { primary: '#166534', text: '#1f2937', background: '#f9fafb' }
     },
     {
+      id: 'sunset',
       name: 'Sunset',
       colors: { primary: '#dc2626', text: '#1f2937', background: '#fffbeb' }
     },
+    {
+      id: 'corporate',
+      name: 'Corporate Blue',
+      colors: { primary: '#1e40af', text: '#1f2937', background: '#f9fafb' }
+    },
+    {
+      id: 'earth',
+      name: 'Warm Earth',
+      colors: { primary: '#a16207', text: '#1c1917', background: '#fefbf3' }
+    },
+    {
+      id: 'mint',
+      name: 'Cool Mint',
+      colors: { primary: '#059669', text: '#1f2937', background: '#f0fdf4' }
+    },
+    {
+      id: 'professional',
+      name: 'Professional Gray',
+      colors: { primary: '#374151', text: '#111827', background: '#f9fafb' }
+    },
   ];
+
+  const handlePresetChange = (presetId: string) => {
+    if (presetId === 'user-defined') return;
+    
+    const preset = presetThemes.find(p => p.id === presetId);
+    if (preset) {
+      onThemeUpdate(preset.colors);
+      setSelectedPreset(presetId);
+    }
+  };
+
+  // Check if current colors match any preset
+  React.useEffect(() => {
+    const matchingPreset = presetThemes.find(preset => 
+      preset.colors.primary === themeConfig.primary &&
+      preset.colors.text === themeConfig.text &&
+      preset.colors.background === themeConfig.background
+    );
+    
+    setSelectedPreset(matchingPreset?.id || 'user-defined');
+  }, [themeConfig, presetThemes]);
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2">
           <Palette className="h-5 w-5" />
           Theme Colors
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Color Pickers */}
-        <div className="grid gap-4">
+      <CardContent className="space-y-4">
+        {/* 2x2 Grid Layout */}
+        <div className="grid grid-cols-2 gap-3">
+          {/* Preset Dropdown */}
+          <div className="space-y-2">
+            <Label>Preset Theme</Label>
+            <Select value={selectedPreset} onValueChange={handlePresetChange}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select preset" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="user-defined">User Defined</SelectItem>
+                {presetThemes.map((preset) => (
+                  <SelectItem key={preset.id} value={preset.id}>
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1">
+                        <div
+                          className="w-3 h-3 rounded-full border"
+                          style={{ backgroundColor: preset.colors.primary }}
+                        />
+                        <div
+                          className="w-3 h-3 rounded-full border"
+                          style={{ backgroundColor: preset.colors.text }}
+                        />
+                        <div
+                          className="w-3 h-3 rounded-full border"
+                          style={{ backgroundColor: preset.colors.background }}
+                        />
+                      </div>
+                      {preset.name}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Primary Color */}
           <ColorPicker
             colorType="primary"
-            label="Primary Color (Buttons)"
+            label="Primary Color"
             color={themeConfig.primary}
           />
+
+          {/* Text Color */}
           <ColorPicker
             colorType="text"
             label="Text Color"
             color={themeConfig.text}
           />
+
+          {/* Background Color */}
           <ColorPicker
             colorType="background"
             label="Background Color"
@@ -171,43 +259,11 @@ export const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
           />
         </div>
 
-        {/* Preset Themes */}
-        <div className="space-y-3">
-          <Label>Quick Presets</Label>
-          <div className="grid grid-cols-2 gap-2">
-            {presetThemes.map((preset) => (
-              <Button
-                key={preset.name}
-                variant="outline"
-                size="sm"
-                onClick={() => onThemeUpdate(preset.colors)}
-                className="justify-start gap-2"
-              >
-                <div className="flex gap-1">
-                  <div
-                    className="w-3 h-3 rounded-full border"
-                    style={{ backgroundColor: preset.colors.primary }}
-                  />
-                  <div
-                    className="w-3 h-3 rounded-full border"
-                    style={{ backgroundColor: preset.colors.text }}
-                  />
-                  <div
-                    className="w-3 h-3 rounded-full border"
-                    style={{ backgroundColor: preset.colors.background }}
-                  />
-                </div>
-                {preset.name}
-              </Button>
-            ))}
-          </div>
-        </div>
-
         {/* Theme Preview */}
         <div className="space-y-2">
           <Label>Preview</Label>
           <div 
-            className="p-4 rounded-lg border"
+            className="p-3 rounded-lg border"
             style={{ 
               backgroundColor: themeConfig.background,
               color: themeConfig.text 

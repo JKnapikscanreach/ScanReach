@@ -85,7 +85,14 @@ export const MicrositePreview: React.FC<MicrositePreviewProps> = ({
 
         {/* Cards */}
         {cards.map((card) => (
-          <Card key={card.id} className="border-0 shadow-sm bg-white/50">
+          <Card 
+            key={card.id} 
+            className="border shadow-sm"
+            style={{
+              backgroundColor: content.theme_config.background,
+              borderColor: content.theme_config.text + '20', // 20% opacity
+            }}
+          >
             <CardContent className="p-4 space-y-4">
               {/* Card Content */}
               {card.content && (
@@ -112,10 +119,9 @@ export const MicrositePreview: React.FC<MicrositePreviewProps> = ({
                     <Button
                       key={button.id}
                       variant="default"
-                      className="w-full justify-start"
+                      className="w-full justify-start border-0"
                       style={{
                         backgroundColor: content.theme_config.primary,
-                        borderColor: content.theme_config.primary,
                         color: '#ffffff',
                       }}
                       onClick={() => handleButtonClick(button.action_type, button.action_value)}
