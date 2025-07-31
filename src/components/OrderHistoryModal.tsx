@@ -20,7 +20,7 @@ export const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({
 }) => {
   const [email, setEmail] = useState('');
   const [searchAttempted, setSearchAttempted] = useState(false);
-  const { orders, loading, error, refetch, getOrderStatus } = useOrderHistory(searchAttempted ? email : undefined);
+  const { orders, loading, error, refetch, getOrderStatus } = useOrderHistory(searchAttempted ? email : '');
   const [statusLoading, setStatusLoading] = useState<string | null>(null);
   const { toast } = useToast();
 
