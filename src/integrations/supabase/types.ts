@@ -44,6 +44,126 @@ export type Database = {
         }
         Relationships: []
       }
+      microsite_buttons: {
+        Row: {
+          action_type: string
+          action_value: string
+          card_id: string
+          created_at: string
+          id: string
+          label: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          action_type: string
+          action_value: string
+          card_id: string
+          created_at?: string
+          id?: string
+          label: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          action_type?: string
+          action_value?: string
+          card_id?: string
+          created_at?: string
+          id?: string
+          label?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "microsite_buttons_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "microsite_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      microsite_cards: {
+        Row: {
+          content: string | null
+          created_at: string
+          id: string
+          is_collapsed: boolean
+          media_url: string | null
+          microsite_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_collapsed?: boolean
+          media_url?: string | null
+          microsite_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_collapsed?: boolean
+          media_url?: string | null
+          microsite_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "microsite_cards_microsite_id_fkey"
+            columns: ["microsite_id"]
+            isOneToOne: false
+            referencedRelation: "microsites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      microsite_content: {
+        Row: {
+          created_at: string
+          header_image_url: string | null
+          id: string
+          microsite_id: string
+          theme_config: Json | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          header_image_url?: string | null
+          id?: string
+          microsite_id: string
+          theme_config?: Json | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          header_image_url?: string | null
+          id?: string
+          microsite_id?: string
+          theme_config?: Json | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "microsite_content_microsite_id_fkey"
+            columns: ["microsite_id"]
+            isOneToOne: true
+            referencedRelation: "microsites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       microsite_scans: {
         Row: {
           created_at: string
