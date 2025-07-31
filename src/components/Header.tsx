@@ -22,11 +22,7 @@ export function Header() {
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link to="/" className="flex items-center">
-              <img
-                src="/lovable-uploads/b9214087-cb0b-42d1-aa0c-45c00df25978.png"
-                alt="ScanReach"
-                className="h-8 w-auto"
-              />
+              <span className="text-xl font-bold text-foreground">Scan Reach</span>
             </Link>
           </div>
 
