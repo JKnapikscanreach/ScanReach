@@ -273,7 +273,7 @@ export const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
             <Button
               size="sm"
               style={{
-                backgroundColor: themeConfig.primary,
+                backgroundColor: `${themeConfig.primary} !important`,
                 borderColor: themeConfig.primary,
                 color: '#ffffff',
               }}

@@ -121,7 +121,7 @@ export const MicrositePreview: React.FC<MicrositePreviewProps> = ({
                       variant="default"
                       className="w-full justify-start border-0"
                       style={{
-                        backgroundColor: content.theme_config.primary,
+                        backgroundColor: `${content.theme_config.primary} !important`,
                         color: '#ffffff',
                       }}
                       onClick={() => handleButtonClick(button.action_type, button.action_value)}
