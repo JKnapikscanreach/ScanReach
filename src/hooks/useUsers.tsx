@@ -106,55 +106,6 @@ export function useUsers() {
     }
   };
 
-  const generateMockData = async () => {
-    const mockUsers = Array.from({ length: 50 }, (_, i) => ({
-      email: `user${i + 1}@example.com`,
-      first_name: ['John', 'Jane', 'Mike', 'Sarah', 'David', 'Emma', 'Chris', 'Lisa'][i % 8],
-      last_name: ['Smith', 'Johnson', 'Brown', 'Davis', 'Wilson', 'Miller', 'Moore', 'Taylor'][i % 8],
-      company_name: i % 3 === 0 ? null : ['Tech Corp', 'Marketing Solutions', 'Design Studio', 'Digital Agency'][i % 4],
-      subscription_status: ['free', 'pro', 'enterprise'][i % 3],
-      is_admin: i === 0, // First user is admin
-    }));
-
-    try {
-      const { error } = await supabase
-        .from('users')
-        .insert(mockUsers);
-
-      if (error) throw error;
-
-      // Generate mock microsites and sessions
-      const { data: userData } = await supabase
-        .from('users')
-        .select('id');
-
-      if (userData) {
-        const mockMicrosites = userData.flatMap(user => 
-          Array.from({ length: Math.floor(Math.random() * 5) }, (_, i) => ({
-            user_id: user.id,
-            name: `Microsite ${i + 1}`,
-            url: `https://microsite${i + 1}.example.com`,
-          }))
-        );
-
-        const mockSessions = userData.map(user => ({
-          user_id: user.id,
-          last_login: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-        }));
-
-        await supabase.from('microsites').insert(mockMicrosites);
-        await supabase.from('user_sessions').insert(mockSessions);
-      }
-
-      await fetchUsers();
-      return { success: true };
-    } catch (err) {
-      return { 
-        success: false, 
-        error: err instanceof Error ? err.message : 'Failed to generate mock data' 
-      };
-    }
-  };
 
   useEffect(() => {
     fetchUsers();
@@ -167,6 +118,5 @@ export function useUsers() {
     refetch: fetchUsers,
     updateUser,
     deleteUser,
-    generateMockData,
   };
 }

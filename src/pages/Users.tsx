@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, ArrowUpDown, Database } from 'lucide-react';
+import { Search, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -12,7 +12,7 @@ type SortField = 'created_at' | 'last_login' | 'microsite_count' | 'first_name';
 type SortDirection = 'asc' | 'desc';
 
 export default function Users() {
-  const { users, loading, error, generateMockData } = useUsers();
+  const { users, loading, error } = useUsers();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -90,10 +90,6 @@ export default function Users() {
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
           <p className="text-destructive mb-4">Error loading users: {error}</p>
-          <Button onClick={generateMockData} variant="outline">
-            <Database className="h-4 w-4 mr-2" />
-            Generate Sample Data
-          </Button>
         </div>
       </div>
     );
@@ -106,12 +102,6 @@ export default function Users() {
           <h1 className="text-3xl font-bold">Users</h1>
           <p className="text-muted-foreground">Manage your application users</p>
         </div>
-        {users.length === 0 && !loading && (
-          <Button onClick={generateMockData} variant="outline">
-            <Database className="h-4 w-4 mr-2" />
-            Generate Sample Data
-          </Button>
-        )}
       </div>
 
       {/* Search */}
