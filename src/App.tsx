@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Users from "./pages/Users";
 import UserDetail from "./pages/UserDetail";
 import Microsites from "./pages/Microsites";
+import MicrositeEdit from "./pages/MicrositeEdit";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
               <Route path="/users" element={<Users />} />
               <Route path="/users/:userId" element={<UserDetail />} />
               <Route path="/microsites" element={<Microsites />} />
+              <Route path="/microsites/:id/edit" element={<MicrositeEdit />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

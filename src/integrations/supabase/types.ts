@@ -44,11 +44,49 @@ export type Database = {
         }
         Relationships: []
       }
+      microsite_scans: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: string | null
+          microsite_id: string
+          scanned_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          microsite_id: string
+          scanned_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          microsite_id?: string
+          scanned_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "microsite_scans_microsite_id_fkey"
+            columns: ["microsite_id"]
+            isOneToOne: false
+            referencedRelation: "microsites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       microsites: {
         Row: {
           created_at: string
           id: string
+          last_scan_at: string | null
           name: string
+          scan_count: number
+          status: string
           updated_at: string
           url: string | null
           user_id: string
@@ -56,7 +94,10 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          last_scan_at?: string | null
           name: string
+          scan_count?: number
+          status?: string
           updated_at?: string
           url?: string | null
           user_id: string
@@ -64,7 +105,10 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          last_scan_at?: string | null
           name?: string
+          scan_count?: number
+          status?: string
           updated_at?: string
           url?: string | null
           user_id?: string

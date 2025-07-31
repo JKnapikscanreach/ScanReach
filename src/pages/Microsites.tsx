@@ -1,57 +1,90 @@
-import { useState, useEffect } from 'react';
-import { Search, Plus, ExternalLink } from 'lucide-react';
+import { useState } from 'react';
+import { Search, Plus, ExternalLink, QrCode, Eye, Edit, ArrowUpDown, Filter } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { QRCodeModal } from '@/components/QRCodeModal';
+import { MicrositePreviewModal } from '@/components/MicrositePreviewModal';
+import { useMicrosites } from '@/hooks/useMicrosites';
+import { Skeleton } from '@/components/ui/skeleton';
 
-interface Microsite {
-  id: string;
-  name: string;
-  url?: string;
-  created_at: string;
-  updated_at: string;
-  user: {
-    first_name: string;
-    last_name: string;
-    email: string;
-  };
-}
+type SortField = 'name' | 'created_at' | 'scan_count' | 'status';
+type SortDirection = 'asc' | 'desc';
+type StatusFilter = 'all' | 'draft' | 'published';
 
 export default function Microsites() {
-  const [microsites, setMicrosites] = useState<Microsite[]>([]);
-  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const { microsites, loading, error } = useMicrosites();
+  
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortField, setSortField] = useState<SortField>('created_at');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
 
-  const fetchMicrosites = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('microsites')
-        .select(`
-          *,
-          user:users(first_name, last_name, email)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setMicrosites(data || []);
-    } catch (error) {
-      console.error('Error fetching microsites:', error);
-    } finally {
-      setLoading(false);
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
     }
   };
 
-  useEffect(() => {
-    fetchMicrosites();
-  }, []);
+  const handleRowClick = (micrositeId: string) => {
+    navigate(`/microsites/${micrositeId}/edit`);
+  };
 
-  const filteredMicrosites = microsites.filter(microsite =>
-    microsite.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    microsite.user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    `${microsite.user.first_name} ${microsite.user.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredAndSortedMicrosites = microsites
+    .filter(microsite => {
+      const matchesSearch = microsite.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        microsite.user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        `${microsite.user.first_name} ${microsite.user.last_name}`.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = statusFilter === 'all' || microsite.status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+      
+      switch (sortField) {
+        case 'name':
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case 'created_at':
+          aValue = new Date(a.created_at);
+          bValue = new Date(b.created_at);
+          break;
+        case 'scan_count':
+          aValue = a.scan_count;
+          bValue = b.scan_count;
+          break;
+        case 'status':
+          aValue = a.status;
+          bValue = b.status;
+          break;
+        default:
+          return 0;
+      }
+      
+      if (sortDirection === 'asc') {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      } else {
+        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+      }
+    });
+
+  const totalPages = Math.ceil(filteredAndSortedMicrosites.length / itemsPerPage);
+  const paginatedMicrosites = filteredAndSortedMicrosites.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
 
   const formatDate = (dateString: string) => {
@@ -75,9 +108,9 @@ export default function Microsites() {
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="mb-6">
-        <div className="relative max-w-sm">
+      {/* Search and Filters */}
+      <div className="mb-6 flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search microsites or users..."
@@ -86,6 +119,20 @@ export default function Microsites() {
             className="pl-9"
           />
         </div>
+        
+        <div className="flex gap-2">
+          <Select value={statusFilter} onValueChange={(value: StatusFilter) => setStatusFilter(value)}>
+            <SelectTrigger className="w-[140px]">
+              <Filter className="h-4 w-4 mr-2" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="published">Published</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Microsites Table */}
@@ -93,47 +140,92 @@ export default function Microsites() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>URL</TableHead>
+              <TableHead>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => handleSort('name')}
+                  className="h-8 p-0 font-semibold"
+                >
+                  Name
+                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => handleSort('status')}
+                  className="h-8 p-0 font-semibold"
+                >
+                  Status
+                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
               <TableHead>Owner</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => handleSort('created_at')}
+                  className="h-8 p-0 font-semibold"
+                >
+                  Created
+                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => handleSort('scan_count')}
+                  className="h-8 p-0 font-semibold"
+                >
+                  Scans
+                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
+              Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                  <TableCell><Skeleton className="h-8 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                  <TableCell><Skeleton className="h-8 w-32" /></TableCell>
+                </TableRow>
+              ))
+            ) : paginatedMicrosites.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8">
-                  Loading microsites...
-                </TableCell>
-              </TableRow>
-            ) : filteredMicrosites.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
-                  {searchTerm ? 'No microsites found matching your search.' : 'No microsites found.'}
+                  {searchTerm || statusFilter !== 'all' 
+                    ? 'No microsites found matching your filters.' 
+                    : 'No microsites found.'
+                  }
                 </TableCell>
               </TableRow>
             ) : (
-              filteredMicrosites.map((microsite) => (
-                <TableRow key={microsite.id}>
+              paginatedMicrosites.map((microsite) => (
+                <TableRow 
+                  key={microsite.id} 
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleRowClick(microsite.id)}
+                >
                   <TableCell className="font-medium">
                     {microsite.name}
                   </TableCell>
                   <TableCell>
-                    {microsite.url ? (
-                      <a
-                        href={microsite.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline inline-flex items-center gap-1"
-                      >
-                        {microsite.url}
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    ) : (
-                      <span className="text-muted-foreground">Not set</span>
-                    )}
+                    <Badge 
+                      variant={microsite.status === 'published' ? 'default' : 'secondary'}
+                      className="capitalize"
+                    >
+                      {microsite.status}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <div>
@@ -146,15 +238,40 @@ export default function Microsites() {
                     </div>
                   </TableCell>
                   <TableCell>{formatDate(microsite.created_at)}</TableCell>
-                  <TableCell>
-                    <Badge variant={microsite.url ? 'default' : 'secondary'}>
-                      {microsite.url ? 'Active' : 'Draft'}
-                    </Badge>
+                  <TableCell className="font-mono">
+                    {microsite.scan_count.toLocaleString()}
                   </TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="sm">
-                      Edit
-                    </Button>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <div className="flex space-x-1">
+                      <QRCodeModal 
+                        micrositeUrl={microsite.url || `https://example.com/m/${microsite.id}`}
+                        micrositeName={microsite.name}
+                        trigger={
+                          <Button variant="ghost" size="sm">
+                            <QrCode className="h-4 w-4" />
+                          </Button>
+                        }
+                      />
+                      
+                      <MicrositePreviewModal
+                        micrositeUrl={microsite.url}
+                        micrositeName={microsite.name}
+                        status={microsite.status as 'draft' | 'published'}
+                        trigger={
+                          <Button variant="ghost" size="sm">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        }
+                      />
+                      
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleRowClick(microsite.id)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -163,11 +280,63 @@ export default function Microsites() {
         </Table>
       </div>
 
-      {/* Summary */}
-      {!loading && filteredMicrosites.length > 0 && (
-        <div className="mt-4 text-sm text-muted-foreground">
-          Showing {filteredMicrosites.length} of {microsites.length} microsites
-          {searchTerm && ` matching "${searchTerm}"`}
+      {/* Pagination and Summary */}
+      {!loading && filteredAndSortedMicrosites.length > 0 && (
+        <div className="mt-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="text-sm text-muted-foreground">
+            Showing {Math.min((currentPage - 1) * itemsPerPage + 1, filteredAndSortedMicrosites.length)} to{' '}
+            {Math.min(currentPage * itemsPerPage, filteredAndSortedMicrosites.length)} of{' '}
+            {filteredAndSortedMicrosites.length} microsites
+            {(searchTerm || statusFilter !== 'all') && (
+              <span> (filtered from {microsites.length} total)</span>
+            )}
+          </div>
+          
+          {totalPages > 1 && (
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                  const pageNumber = i + 1;
+                  return (
+                    <Button
+                      key={pageNumber}
+                      variant={currentPage === pageNumber ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(pageNumber)}
+                      className="w-8 h-8 p-0"
+                    >
+                      {pageNumber}
+                    </Button>
+                  );
+                })}
+                {totalPages > 5 && <span className="text-muted-foreground">...</span>}
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {error && (
+        <div className="mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+          <p className="text-destructive">Error: {error}</p>
         </div>
       )}
     </div>
