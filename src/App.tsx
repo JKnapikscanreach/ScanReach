@@ -8,7 +8,7 @@ import { DebugFloatingButton } from "@/components/DebugFloatingButton";
 import { Header } from "@/components/Header";
 import { createDebugSupabaseClient, debugFetch } from "@/utils/debugWrapper";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Index from "./pages/Index";
 import Users from "./pages/Users";
 import UserDetail from "./pages/UserDetail";
@@ -21,8 +21,13 @@ const queryClient = new QueryClient();
 // Debug initialization component
 const DebugInitializer = ({ children }: { children: React.ReactNode }) => {
   const { addEntry } = useDebug();
+  const initializedRef = useRef(false);
   
   useEffect(() => {
+    // Only initialize once per app lifecycle
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+    
     // Initialize global fetch debugging
     const restoreFetch = debugFetch(addEntry);
     
@@ -31,17 +36,17 @@ const DebugInitializer = ({ children }: { children: React.ReactNode }) => {
     Object.setPrototypeOf(supabase, Object.getPrototypeOf(debugClient));
     Object.assign(supabase, debugClient);
     
-    // Log initialization
+    // Log initialization once
     addEntry({
       type: 'info',
       source: 'Debug System',
-      request: { action: 'Always-on debug system initialized' },
+      request: { action: 'Debug system initialized' },
     });
     
     return () => {
       restoreFetch();
     };
-  }, [addEntry]);
+  }, []); // Empty dependency array to run only once
   
   return <>{children}</>;
 };
