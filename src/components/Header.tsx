@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { User, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import scanreachWordmark from '@/assets/scanreach-wordmark.png';
+// Logo will use direct URL reference
 
 const navigation = [
   { name: 'Users', href: '/users' },
@@ -23,7 +23,7 @@ export function Header() {
           <div className="flex-shrink-0">
             <Link to="/" className="flex items-center">
               <img
-                src={scanreachWordmark}
+                src="/lovable-uploads/b9214087-cb0b-42d1-aa0c-45c00df25978.png"
                 alt="ScanReach"
                 className="h-8 w-auto"
               />
