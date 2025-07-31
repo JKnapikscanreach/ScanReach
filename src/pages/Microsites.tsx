@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Search, Plus, ExternalLink, QrCode, Eye, Edit, ArrowUpDown, Filter } from 'lucide-react';
+import { nanoid } from 'nanoid';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +11,8 @@ import { QRCodeModal } from '@/components/QRCodeModal';
 import { MicrositePreviewModal } from '@/components/MicrositePreviewModal';
 import { useMicrosites } from '@/hooks/useMicrosites';
 import { Skeleton } from '@/components/ui/skeleton';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 type SortField = 'name' | 'created_at' | 'scan_count' | 'status';
 type SortDirection = 'asc' | 'desc';
@@ -17,7 +20,7 @@ type StatusFilter = 'all' | 'draft' | 'published';
 
 export default function Microsites() {
   const navigate = useNavigate();
-  const { microsites, loading, error } = useMicrosites();
+  const { microsites, loading, error, refetch } = useMicrosites();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<SortField>('created_at');
@@ -37,6 +40,33 @@ export default function Microsites() {
 
   const handleRowClick = (micrositeId: string) => {
     navigate(`/microsites/${micrositeId}/edit`);
+  };
+
+  const handleCreateMicrosite = async () => {
+    try {
+      const micrositeId = nanoid();
+      const micrositeUrl = `microsite-${nanoid(8)}`;
+      
+      // Create a new microsite with auto-generated data
+      const { error } = await supabase
+        .from('microsites')
+        .insert({
+          id: micrositeId,
+          name: `New Microsite ${Date.now()}`,
+          url: micrositeUrl,
+          status: 'draft',
+          user_id: 'system', // This should be replaced with actual user ID when auth is implemented
+          scan_count: 0
+        });
+
+      if (error) throw error;
+
+      toast.success('Microsite created successfully');
+      navigate(`/microsites/${micrositeId}/edit`);
+    } catch (error) {
+      console.error('Error creating microsite:', error);
+      toast.error('Failed to create microsite');
+    }
   };
 
   const filteredAndSortedMicrosites = microsites
@@ -102,7 +132,7 @@ export default function Microsites() {
           <h1 className="text-3xl font-bold">Microsites</h1>
           <p className="text-muted-foreground">Manage user microsites and landing pages</p>
         </div>
-        <Button>
+        <Button onClick={handleCreateMicrosite}>
           <Plus className="h-4 w-4 mr-2" />
           Create Microsite
         </Button>

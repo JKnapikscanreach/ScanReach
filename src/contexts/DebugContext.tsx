@@ -39,10 +39,10 @@ interface DebugProviderProps {
 
 export const DebugProvider: React.FC<DebugProviderProps> = ({ children }) => {
   const [entries, setEntries] = useState<DebugEntry[]>([]);
-  const [isEnabled, setIsEnabled] = useState(false);
+  const [isEnabled, setIsEnabled] = useState(true); // Always enabled
 
   const addEntry = (entry: Omit<DebugEntry, 'id' | 'timestamp'>) => {
-    if (!isEnabled) return;
+    // Always log entries, no check needed
     
     const newEntry: DebugEntry = {
       ...entry,
@@ -67,14 +67,12 @@ export const DebugProvider: React.FC<DebugProviderProps> = ({ children }) => {
   };
 
   const toggleDebug = () => {
-    setIsEnabled(prev => !prev);
-    if (!isEnabled) {
-      addEntry({
-        type: 'info',
-        source: 'DebugContext',
-        request: { action: 'Debug mode enabled' },
-      });
-    }
+    // No-op since debug is always on
+    addEntry({
+      type: 'info',
+      source: 'DebugContext',
+      request: { action: 'Debug UI toggled' },
+    });
   };
 
   const exportEntries = () => {

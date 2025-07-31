@@ -17,43 +17,25 @@ export const DebugFloatingButton: React.FC = () => {
 
   return (
     <>
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">        
         <Button
-          variant={isEnabled ? "default" : "outline"}
+          variant="outline"
           size="sm"
-          onClick={toggleDebug}
+          onClick={() => setModalOpen(true)}
           className="relative"
+          title="Open Debug Console (Ctrl+Shift+D)"
         >
-          {isEnabled ? <Bug className="h-4 w-4" /> : <BugOff className="h-4 w-4" />}
-          {isEnabled && errorCount > 0 && (
+          <Bug className="h-4 w-4 mr-2" />
+          Debug ({entries.length})
+          {errorCount > 0 && (
             <Badge 
               variant="destructive" 
-              className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs"
+              className="ml-2 h-4 px-1 text-xs"
             >
-              {errorCount > 99 ? '99+' : errorCount}
+              {errorCount}
             </Badge>
           )}
         </Button>
-        
-        {isEnabled && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setModalOpen(true)}
-            className="relative"
-            title="Open Master Debug Console (Ctrl+Shift+D)"
-          >
-            Debug ({entries.length})
-            {errorCount > 0 && (
-              <Badge 
-                variant="destructive" 
-                className="ml-2 h-4 px-1 text-xs"
-              >
-                {errorCount}
-              </Badge>
-            )}
-          </Button>
-        )}
       </div>
 
       <MasterDebugModal open={modalOpen} onOpenChange={setModalOpen} />
