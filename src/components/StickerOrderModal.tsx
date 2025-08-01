@@ -296,7 +296,7 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
               )}
               
               {!loading && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
                   <div>
                     <Label htmlFor="product">Product</Label>
                     <Select 
@@ -352,38 +352,14 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
                 />
               </div>
 
-              <div className="p-4 bg-accent rounded-lg">
-                <div className="text-lg font-semibold">
-                  Total: ${totalPrice.toFixed(2)}
+              <div className="flex items-center justify-between p-6 bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg border border-primary/20">
+                <div className="flex flex-col">
+                  <span className="text-sm text-muted-foreground">Order Total</span>
+                  <span className="text-2xl font-bold text-primary">${totalPrice.toFixed(2)}</span>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Customer and Shipping forms... */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Customer Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="name">Full Name *</Label>
-                <Input
-                  id="name"
-                  value={customerInfo.name}
-                  onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="email">Email *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={customerInfo.email}
-                  onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
-                  required
-                />
+                <div className="text-right text-sm text-muted-foreground">
+                  {quantity} × ${selectedVariant?.price || '0.00'}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -392,78 +368,104 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Truck className="h-4 w-4" />
-                Shipping Address
+                Customer Information
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="country">Country *</Label>
-                <Select 
-                  value={shippingAddress.country} 
-                  onValueChange={(value) => setShippingAddress({ ...shippingAddress, country: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a country" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {COUNTRIES.map((country) => (
-                      <SelectItem key={country.code} value={country.code}>
-                        {country.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="address1">Address Line 1 *</Label>
-                <Input
-                  id="address1"
-                  value={shippingAddress.address1}
-                  onChange={(e) => setShippingAddress({ ...shippingAddress, address1: e.target.value })}
-                  required
-                />
-              </div>
-
+            <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="city">City *</Label>
+                  <Label htmlFor="name">Full Name *</Label>
                   <Input
-                    id="city"
-                    value={shippingAddress.city}
-                    onChange={(e) => setShippingAddress({ ...shippingAddress, city: e.target.value })}
+                    id="name"
+                    value={customerInfo.name}
+                    onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
                     required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="state">State *</Label>
+                  <Label htmlFor="email">Email *</Label>
                   <Input
-                    id="state"
-                    value={shippingAddress.state}
-                    onChange={(e) => setShippingAddress({ ...shippingAddress, state: e.target.value })}
+                    id="email"
+                    type="email"
+                    value={customerInfo.email}
+                    onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
                     required
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <h4 className="font-medium text-sm text-muted-foreground">Shipping Address</h4>
+                
                 <div>
-                  <Label htmlFor="zip">ZIP Code *</Label>
+                  <Label htmlFor="country">Country *</Label>
+                  <Select 
+                    value={shippingAddress.country} 
+                    onValueChange={(value) => setShippingAddress({ ...shippingAddress, country: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {COUNTRIES.map((country) => (
+                        <SelectItem key={country.code} value={country.code}>
+                          {country.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="address1">Address Line 1 *</Label>
                   <Input
-                    id="zip"
-                    value={shippingAddress.zip}
-                    onChange={(e) => setShippingAddress({ ...shippingAddress, zip: e.target.value })}
+                    id="address1"
+                    value={shippingAddress.address1}
+                    onChange={(e) => setShippingAddress({ ...shippingAddress, address1: e.target.value })}
                     required
                   />
                 </div>
-                <div>
-                  <Label htmlFor="phone">Phone (Optional)</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={shippingAddress.phone}
-                    onChange={(e) => setShippingAddress({ ...shippingAddress, phone: e.target.value })}
-                  />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="city">City *</Label>
+                    <Input
+                      id="city"
+                      value={shippingAddress.city}
+                      onChange={(e) => setShippingAddress({ ...shippingAddress, city: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="state">State *</Label>
+                    <Input
+                      id="state"
+                      value={shippingAddress.state}
+                      onChange={(e) => setShippingAddress({ ...shippingAddress, state: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="zip">ZIP Code *</Label>
+                    <Input
+                      id="zip"
+                      value={shippingAddress.zip}
+                      onChange={(e) => setShippingAddress({ ...shippingAddress, zip: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone">Phone (Optional)</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={shippingAddress.phone}
+                      onChange={(e) => setShippingAddress({ ...shippingAddress, phone: e.target.value })}
+                    />
+                  </div>
                 </div>
               </div>
             </CardContent>
