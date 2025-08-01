@@ -28,6 +28,7 @@ export default function MicrositeEdit() {
   const [microsite, setMicrosite] = useState<MicrositeData | null>(null);
   const [loading, setLoading] = useState(!isNewMicrosite);
   const [autoSaving, setAutoSaving] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   useEffect(() => {
     if (!isNewMicrosite && id) {
@@ -96,6 +97,40 @@ export default function MicrositeEdit() {
     }
   };
 
+  const handlePublishToggle = async () => {
+    if (!microsite) return;
+    
+    try {
+      setIsPublishing(true);
+      const newStatus = microsite.status === 'published' ? 'draft' : 'published';
+      
+      const { error } = await supabase
+        .from('microsites')
+        .update({ status: newStatus })
+        .eq('id', microsite.id);
+
+      if (error) throw error;
+
+      setMicrosite(prev => prev ? { ...prev, status: newStatus } : null);
+      
+      toast.success(
+        newStatus === 'published' 
+          ? 'Microsite published successfully' 
+          : 'Microsite unpublished'
+      );
+    } catch (error) {
+      console.error('Error updating microsite status:', error);
+      toast.error('Failed to update microsite status');
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const getPublicUrl = () => {
+    if (!microsite?.url) return '';
+    return `${window.location.origin}/m/${microsite.url}`;
+  };
+
 
   if (loading) {
     return (
@@ -152,6 +187,15 @@ export default function MicrositeEdit() {
                 Auto-saving...
               </Badge>
             )}
+            
+            {/* Status Badge */}
+            <Badge 
+              variant={microsite.status === 'published' ? 'default' : 'secondary'}
+              className="text-xs"
+            >
+              {microsite.status === 'published' ? 'Published' : 'Draft'}
+            </Badge>
+            
             <Button 
               variant="outline" 
               size="sm"
@@ -163,16 +207,36 @@ export default function MicrositeEdit() {
               <Save className="h-4 w-4 mr-2" />
               Save
             </Button>
+            
             <Button 
+              variant={microsite.status === 'published' ? 'secondary' : 'default'}
               size="sm"
-              onClick={() => {
-                // Placeholder for publish functionality  
-                toast.success('Microsite published');
-              }}
+              onClick={handlePublishToggle}
+              disabled={isPublishing}
             >
-              <Eye className="h-4 w-4 mr-2" />
-              Publish
+              {microsite.status === 'published' ? (
+                <>
+                  <Globe className="h-4 w-4 mr-2" />
+                  Un-Publish
+                </>
+              ) : (
+                <>
+                  <Eye className="h-4 w-4 mr-2" />
+                  Publish
+                </>
+              )}
             </Button>
+            
+            {microsite.status === 'published' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open(getPublicUrl(), '_blank')}
+              >
+                <Globe className="h-4 w-4 mr-2" />
+                View Live
+              </Button>
+            )}
           </div>
         </div>
         

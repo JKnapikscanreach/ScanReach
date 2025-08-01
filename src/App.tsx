@@ -16,6 +16,7 @@ import Users from "./pages/Users";
 import UserDetail from "./pages/UserDetail";
 import Microsites from "./pages/Microsites";
 import MicrositeEdit from "./pages/MicrositeEdit";
+import PublicMicrosite from "./pages/PublicMicrosite";
 import NotFound from "./pages/NotFound";
 import { Auth } from "./pages/Auth";
 
@@ -97,6 +98,7 @@ const App = () => (
                       <MicrositeEdit />
                     </ProtectedRoute>
                   } />
+                  <Route path="/m/:micrositeUrl" element={<PublicMicrosite />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
