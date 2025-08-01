@@ -51,26 +51,26 @@ export default function Microsites() {
     }
 
     try {
-      const micrositeId = nanoid();
       const micrositeUrl = `microsite-${nanoid(8)}`;
       
-      // Create a new microsite with actual user ID
-      const { error } = await supabase
+      // Create a new microsite with actual user ID (let DB auto-generate UUID)
+      const { data, error } = await supabase
         .from('microsites')
         .insert({
-          id: micrositeId,
           name: `New Microsite ${Date.now()}`,
           url: micrositeUrl,
           status: 'draft',
           user_id: user.id,
           scan_count: 0
-        });
+        })
+        .select('id')
+        .single();
 
       if (error) throw error;
 
       toast.success('Microsite created successfully');
       refetch(); // Refresh the list
-      navigate(`/microsites/${micrositeId}/edit`);
+      navigate(`/microsites/${data.id}/edit`);
     } catch (error) {
       console.error('Error creating microsite:', error);
       toast.error('Failed to create microsite');
