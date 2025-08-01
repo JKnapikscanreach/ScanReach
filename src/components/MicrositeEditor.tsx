@@ -145,7 +145,7 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
   }
 
   return (
-    <div className="flex bg-background" style={{ height: 'calc(100vh - 140px)' }}>
+    <div className="flex bg-background" style={{ height: 'calc(140px)' }}>
       {/* Editor Panel */}
       <div className="flex-1 border-r flex flex-col">
         <div className="p-4 space-y-4 flex-1 min-h-0 overflow-y-auto">
