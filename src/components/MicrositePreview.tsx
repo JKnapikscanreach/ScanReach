@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Phone, Mail, ExternalLink } from 'lucide-react';
+import { Phone, Mail, ExternalLink, Globe, MapPin, MessageCircle, Heart, Star } from 'lucide-react';
 import { MicrositeContent, MicrositeCard } from '@/hooks/useMicrositeContent';
 
 interface MicrositePreviewProps {
@@ -10,21 +10,39 @@ interface MicrositePreviewProps {
   title: string;
 }
 
-export const MicrositePreview: React.FC<MicrositePreviewProps> = ({
+export const MicrositePreview: React.FC<MicrositePreviewProps> = React.memo(({
   content,
   cards,
   title,
 }) => {
-  const getButtonIcon = (actionType: string) => {
-    switch (actionType) {
-      case 'tel':
+  const getButtonIcon = (iconName: string, actionType: string) => {
+    // Use custom icon if specified, otherwise fall back to action type
+    switch (iconName || 'default') {
+      case 'Globe':
+        return <Globe className="h-4 w-4" />;
+      case 'Phone':
         return <Phone className="h-4 w-4" />;
-      case 'mailto':
+      case 'Mail':
         return <Mail className="h-4 w-4" />;
-      case 'url':
-        return <ExternalLink className="h-4 w-4" />;
+      case 'MapPin':
+        return <MapPin className="h-4 w-4" />;
+      case 'MessageCircle':
+        return <MessageCircle className="h-4 w-4" />;
+      case 'Heart':
+        return <Heart className="h-4 w-4" />;
+      case 'Star':
+        return <Star className="h-4 w-4" />;
       default:
-        return <ExternalLink className="h-4 w-4" />;
+        // Fallback to action type icons
+        switch (actionType) {
+          case 'tel':
+            return <Phone className="h-4 w-4" />;
+          case 'mailto':
+            return <Mail className="h-4 w-4" />;
+          case 'url':
+          default:
+            return <ExternalLink className="h-4 w-4" />;
+        }
     }
   };
 
@@ -125,21 +143,23 @@ export const MicrositePreview: React.FC<MicrositePreviewProps> = ({
               {/* Card Buttons */}
               {card.buttons.length > 0 && (
                 <div className="space-y-2">
-                  {card.buttons.map((button) => (
-                  <Button
-                      key={button.id}
-                      variant="ghost"
-                      className="w-full justify-start border-0 hover:opacity-90"
-                      style={{
-                        backgroundColor: content.theme_config.primary,
-                        color: '#ffffff',
-                      }}
-                      onClick={() => handleButtonClick(button.action_type, button.action_value)}
-                    >
-                      {getButtonIcon(button.action_type)}
-                      <span className="ml-2">{button.label}</span>
-                    </Button>
-                  ))}
+                  {card.buttons
+                    .sort((a, b) => a.sort_order - b.sort_order)
+                    .map((button) => (
+                    <Button
+                        key={button.id}
+                        variant="ghost"
+                        className="w-full justify-start border-0 hover:opacity-90"
+                        style={{
+                          backgroundColor: content.theme_config.primary,
+                          color: '#ffffff',
+                        }}
+                        onClick={() => handleButtonClick(button.action_type, button.action_value)}
+                      >
+                        {getButtonIcon((button as any).icon, button.action_type)}
+                        <span className="ml-2">{button.label}</span>
+                      </Button>
+                    ))}
                 </div>
               )}
             </CardContent>
@@ -156,4 +176,4 @@ export const MicrositePreview: React.FC<MicrositePreviewProps> = ({
       </div>
     </div>
   );
-};
+});

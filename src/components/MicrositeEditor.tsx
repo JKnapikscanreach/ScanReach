@@ -48,7 +48,7 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   
   // Debounced title update
-  const debouncedTitle = useDebounce(title, 500);
+  const debouncedTitle = useDebounce(title, 600);
   
   useEffect(() => {
     if (content?.title) {
@@ -139,8 +139,8 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
   return (
     <div className="flex h-screen bg-background">
       {/* Editor Panel */}
-      <div className="flex-1 overflow-auto border-r">
-        <div className="p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto border-r">
+        <div className="p-4 space-y-4 max-h-screen">
           {/* Auto-saving indicator */}
           {autoSaving && (
             <div className="mb-4">
@@ -274,20 +274,20 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
       </div>
 
       {/* Preview Panel */}
-      <div className="w-2/5 bg-muted/30">
-        <div className="p-4 space-y-4">
+      <div className="w-2/5 bg-muted/30 overflow-y-auto">
+        <div className="p-4 space-y-4 max-h-screen">
           {/* QR Code Section */}
           <MicrositeQRSection micrositeId={micrositeId} />
           
           {/* Live Preview */}
-          <div>
-            <div className="mb-4 p-4 border-b bg-background rounded-t-lg">
-              <h3 className="font-semibold">Live Microsite Preview</h3>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle>Live Microsite Preview</CardTitle>
               <p className="text-sm text-muted-foreground">
                 See how your microsite will look to visitors
               </p>
-            </div>
-            <div className="p-4 bg-background rounded-b-lg">
+            </CardHeader>
+            <CardContent>
               {content && (
                 <MicrositePreview
                   content={content}
@@ -295,8 +295,8 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
                   title={title}
                 />
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

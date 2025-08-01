@@ -180,21 +180,24 @@ export const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
             </Select>
           </div>
 
-          <ColorPicker 
-            label="Primary Color" 
-            value={themeConfig.primary}
-            onChange={(color) => handleColorChange('primary', color)}
-          />
-          <ColorPicker 
-            label="Text Color" 
-            value={themeConfig.text}
-            onChange={(color) => handleColorChange('text', color)}
-          />
-          <ColorPicker 
-            label="Background Color" 
-            value={themeConfig.background}
-            onChange={(color) => handleColorChange('background', color)}
-          />
+          {/* Theme Colors in Single Row */}
+          <div className="grid grid-cols-3 gap-3">
+            <ColorPicker 
+              label="Button Color" 
+              value={themeConfig.primary}
+              onChange={(color) => handleColorChange('primary', color)}
+            />
+            <ColorPicker 
+              label="Text Color" 
+              value={themeConfig.text}
+              onChange={(color) => handleColorChange('text', color)}
+            />
+            <ColorPicker 
+              label="Background Color" 
+              value={themeConfig.background}
+              onChange={(color) => handleColorChange('background', color)}
+            />
+          </div>
         </div>
 
         {/* Theme Preview */}

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Download, Printer, History, Upload } from 'lucide-react';
+import { Download, Printer, History, Upload, Copy } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import QRCode from 'qrcode';
 import { StickerOrderModal } from './StickerOrderModal';
@@ -111,6 +111,11 @@ export const MicrositeQRSection: React.FC<MicrositeQRSectionProps> = ({ microsit
     toast.success('QR code downloaded!');
   };
 
+  const copyUrl = () => {
+    navigator.clipboard.writeText(micrositeUrl);
+    toast.success('URL copied to clipboard!');
+  };
+
   const orderStickers = () => {
     if (!qrDataUrl) {
       generateQR().then(() => {
@@ -131,8 +136,30 @@ export const MicrositeQRSection: React.FC<MicrositeQRSectionProps> = ({ microsit
         <CardTitle>QR Code</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* URL Section - Full Width at Top */}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Microsite URL</Label>
+          <div className="flex items-center gap-2">
+            <Input 
+              value={micrositeUrl} 
+              readOnly 
+              className="text-sm bg-muted/50 flex-1"
+            />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={copyUrl}
+              className="h-8 w-8 p-0"
+              title="Copy URL to clipboard"
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* QR Preview and Controls */}
         <div className="grid lg:grid-cols-2 gap-6">
-          {/* Left side - QR Preview and URL */}
+          {/* Left side - QR Preview */}
           <div className="space-y-4">
             <div className="flex justify-center p-4 bg-muted/30 rounded-lg">
               {qrDataUrl ? (
@@ -148,28 +175,19 @@ export const MicrositeQRSection: React.FC<MicrositeQRSectionProps> = ({ microsit
                 </div>
               )}
             </div>
-            
-            <div>
-              <Label className="text-sm font-medium">Microsite URL</Label>
-              <Input 
-                value={micrositeUrl} 
-                readOnly 
-                className="text-sm bg-muted/50"
-              />
-            </div>
           </div>
 
           {/* Right side - Controls */}
           <div className="space-y-4">
-            <div className="space-y-4">
+            {/* Color Controls in Grid */}
+            <div className="grid grid-cols-2 gap-3">
               <ColorPicker
-                label="QR Code Color"
+                label="QR Color"
                 value={qrColor}
                 onChange={setQrColor}
               />
-
               <ColorPicker
-                label="Background Color"
+                label="Background"
                 value={backgroundColor}
                 onChange={setBackgroundColor}
               />
@@ -180,16 +198,16 @@ export const MicrositeQRSection: React.FC<MicrositeQRSectionProps> = ({ microsit
               <Label className="text-sm font-medium">Upload Logo</Label>
               <div 
                 {...getRootProps()} 
-                className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors text-sm ${
+                className={`border-2 border-dashed rounded-lg p-3 text-center cursor-pointer transition-colors text-sm ${
                   isDragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'
                 }`}
               >
                 <input {...getInputProps()} />
                 {logoDataUrl ? (
                   <div className="space-y-2">
-                    <img src={logoDataUrl} alt="Logo preview" className="w-8 h-8 mx-auto object-contain" />
+                    <img src={logoDataUrl} alt="Logo preview" className="w-6 h-6 mx-auto object-contain" />
                     <p className="text-xs text-muted-foreground">
-                      {logoFile?.name} - Click to change
+                      {logoFile?.name?.length > 20 ? logoFile?.name.substring(0, 20) + '...' : logoFile?.name}
                     </p>
                   </div>
                 ) : (

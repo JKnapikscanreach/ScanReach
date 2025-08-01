@@ -46,15 +46,6 @@ export function ColorPicker({ label, value, onChange, showEyedropper = true }: C
           <PopoverContent className="w-auto p-3" align="start">
             <div className="space-y-3">
               <div className="space-y-2">
-                <Label className="text-xs">Hex Color</Label>
-                <Input
-                  type="text"
-                  value={value}
-                  onChange={(e) => onChange(e.target.value)}
-                  className="font-mono text-xs"
-                />
-              </div>
-              <div className="space-y-2">
                 <Label className="text-xs">Color Picker</Label>
                 <SketchPicker
                   color={value}
