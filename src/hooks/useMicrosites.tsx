@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Microsite {
   id: string;
@@ -21,19 +22,32 @@ export const useMicrosites = () => {
   const [microsites, setMicrosites] = useState<Microsite[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user, isAdmin } = useAuth();
 
   const fetchMicrosites = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const { data, error } = await supabase
+      if (!user) {
+        setMicrosites([]);
+        setLoading(false);
+        return;
+      }
+      
+      let query = supabase
         .from('microsites')
         .select(`
           *,
           user:users(first_name, last_name, email)
-        `)
-        .order('created_at', { ascending: false });
+        `);
+      
+      // If not admin, only show user's own microsites
+      if (!isAdmin) {
+        query = query.eq('user_id', user.id);
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
       setMicrosites(data || []);
@@ -92,8 +106,10 @@ export const useMicrosites = () => {
   };
 
   useEffect(() => {
-    fetchMicrosites();
-  }, []);
+    if (user) {
+      fetchMicrosites();
+    }
+  }, [user, isAdmin]);
 
   return {
     microsites,

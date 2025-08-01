@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface User {
   id: string;
@@ -20,10 +21,18 @@ export function useUsers() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user: currentUser, isAdmin } = useAuth();
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      
+      // Only allow admins to fetch users
+      if (!currentUser || !isAdmin) {
+        setUsers([]);
+        setLoading(false);
+        return;
+      }
       
       // Fetch users with microsite counts and last login
       const { data: usersData, error: usersError } = await supabase
@@ -108,8 +117,10 @@ export function useUsers() {
 
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (currentUser && isAdmin) {
+      fetchUsers();
+    }
+  }, [currentUser, isAdmin]);
 
   return {
     users,

@@ -1,19 +1,32 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { User, Menu, X } from 'lucide-react';
+import { User, Menu, X, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 // Logo will use direct URL reference
-
-const navigation = [
-  { name: 'Users', href: '/users' },
-  { name: 'Microsites', href: '/microsites' },
-  { name: 'QR Code Studio', href: '/' },
-];
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { user, signOut, isAdmin } = useAuth();
+
+  // Don't show header on auth page
+  if (location.pathname === '/auth') {
+    return null;
+  }
+
+  const navigation = [
+    { name: 'QR Code Studio', href: '/' },
+    { name: 'Microsites', href: '/microsites' },
+    ...(isAdmin ? [{ name: 'Users', href: '/users' }] : []),
+  ];
 
   return (
     <header className="bg-background border-b border-border">
@@ -45,12 +58,24 @@ export function Header() {
           </nav>
 
           {/* Account Button */}
-          <div className="hidden md:flex">
-            <Button variant="ghost" size="sm">
-              <User className="h-4 w-4" />
-              Account
-            </Button>
-          </div>
+          {user && (
+            <div className="hidden md:flex">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <User className="h-4 w-4 mr-2" />
+                    {user.email}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={signOut}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
 
           {/* Mobile menu button */}
           <div className="md:hidden">
@@ -87,12 +112,19 @@ export function Header() {
                   {item.name}
                 </Link>
               ))}
-              <div className="px-3 py-2">
-                <Button variant="ghost" size="sm" className="w-full justify-start">
-                  <User className="h-4 w-4 mr-2" />
-                  Account
-                </Button>
-              </div>
+              {user && (
+                <div className="px-3 py-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full justify-start"
+                    onClick={signOut}
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         )}

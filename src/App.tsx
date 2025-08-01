@@ -4,8 +4,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { DebugProvider, useDebug } from "@/contexts/DebugContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { DebugFloatingButton } from "@/components/DebugFloatingButton";
 import { Header } from "@/components/Header";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { createDebugSupabaseClient, debugFetch } from "@/utils/debugWrapper";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useRef } from "react";
@@ -15,6 +17,7 @@ import UserDetail from "./pages/UserDetail";
 import Microsites from "./pages/Microsites";
 import MicrositeEdit from "./pages/MicrositeEdit";
 import NotFound from "./pages/NotFound";
+import { Auth } from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
@@ -54,28 +57,55 @@ const DebugInitializer = ({ children }: { children: React.ReactNode }) => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <DebugProvider>
-      <DebugInitializer>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Header />
-            <main className="min-h-screen">
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/users" element={<Users />} />
-                <Route path="/users/:userId" element={<UserDetail />} />
-                <Route path="/microsites" element={<Microsites />} />
-                <Route path="/microsites/:id/edit" element={<MicrositeEdit />} />
-                <Route path="/microsites/new" element={<MicrositeEdit />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </main>
-          </BrowserRouter>
-          <DebugFloatingButton />
-        </TooltipProvider>
-      </DebugInitializer>
+      <AuthProvider>
+        <DebugInitializer>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Header />
+              <main className="min-h-screen">
+                <Routes>
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/" element={
+                    <ProtectedRoute>
+                      <Index />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/users" element={
+                    <ProtectedRoute requireAdmin>
+                      <Users />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/users/:userId" element={
+                    <ProtectedRoute requireAdmin>
+                      <UserDetail />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/microsites" element={
+                    <ProtectedRoute>
+                      <Microsites />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/microsites/:id/edit" element={
+                    <ProtectedRoute>
+                      <MicrositeEdit />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/microsites/new" element={
+                    <ProtectedRoute>
+                      <MicrositeEdit />
+                    </ProtectedRoute>
+                  } />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </main>
+            </BrowserRouter>
+            <DebugFloatingButton />
+          </TooltipProvider>
+        </DebugInitializer>
+      </AuthProvider>
     </DebugProvider>
   </QueryClientProvider>
 );
