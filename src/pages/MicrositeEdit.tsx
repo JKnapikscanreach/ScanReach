@@ -180,7 +180,7 @@ export default function MicrositeEdit() {
       </div>
 
       {/* Editor Container - Takes remaining height */}
-      <div className="flex-1 min-h-0 container mx-auto px-4 max-w-7xl">
+      <div className="flex-1 min-h-0 px-4">
         <MicrositeEditor 
           micrositeId={microsite.id}
           onSave={() => toast.success('Microsite saved')}
