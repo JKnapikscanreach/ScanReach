@@ -8,12 +8,16 @@ import { useDebugKeyboard } from '@/hooks/useDebugKeyboard';
 import { Bug, BugOff } from 'lucide-react';
 
 export const DebugFloatingButton: React.FC = () => {
+  console.log('DebugFloatingButton rendering...');
   const [modalOpen, setModalOpen] = useState(false);
   const { isEnabled, toggleDebug, entries } = useDebug();
   const location = useLocation();
+  
+  console.log('DebugFloatingButton location:', location.pathname);
 
   // Don't show debug button on public microsite pages
   if (location.pathname.startsWith('/m/')) {
+    console.log('Hiding debug button for microsite page');
     return null;
   }
 

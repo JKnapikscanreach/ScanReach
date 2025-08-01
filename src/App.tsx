@@ -55,7 +55,9 @@ const DebugInitializer = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const App = () => (
+const App = () => {
+  console.log('App component rendering...');
+  return (
   <QueryClientProvider client={queryClient}>
     <DebugProvider>
       <AuthProvider>
@@ -110,6 +112,7 @@ const App = () => (
       </AuthProvider>
     </DebugProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
