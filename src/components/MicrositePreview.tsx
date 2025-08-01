@@ -116,12 +116,12 @@ export const MicrositePreview: React.FC<MicrositePreviewProps> = ({
               {card.buttons.length > 0 && (
                 <div className="space-y-2">
                   {card.buttons.map((button) => (
-                    <Button
+                  <Button
                       key={button.id}
-                      variant="default"
-                      className="w-full justify-start border-0"
+                      variant="ghost"
+                      className="w-full justify-start border-0 hover:opacity-90"
                       style={{
-                        backgroundColor: `${content.theme_config.primary} !important`,
+                        backgroundColor: content.theme_config.primary,
                         color: '#ffffff',
                       }}
                       onClick={() => handleButtonClick(button.action_type, button.action_value)}

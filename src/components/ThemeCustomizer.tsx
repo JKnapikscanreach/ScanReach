@@ -271,9 +271,11 @@ export const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
           >
             <p className="text-sm mb-2">Sample text content</p>
             <Button
+              variant="ghost"
               size="sm"
+              className="hover:opacity-90"
               style={{
-                backgroundColor: `${themeConfig.primary} !important`,
+                backgroundColor: themeConfig.primary,
                 borderColor: themeConfig.primary,
                 color: '#ffffff',
               }}
