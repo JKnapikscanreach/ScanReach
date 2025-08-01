@@ -124,7 +124,7 @@ export const MicrositeCardEditor: React.FC<MicrositeCardEditorProps> = ({
         <div className="flex items-center justify-between">
           <Label>Buttons ({card.buttons.length}/3)</Label>
           {card.buttons.length < 3 && (
-            <Button onClick={handleAddButton} size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <Button onClick={handleAddButton} size="sm">
               <Plus className="h-4 w-4 mr-2" />
               Add Button
             </Button>
@@ -221,7 +221,7 @@ export const MicrositeCardEditor: React.FC<MicrositeCardEditorProps> = ({
         {card.buttons.length === 0 && (
           <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
             <p className="mb-2">No buttons yet</p>
-            <Button onClick={handleAddButton} size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <Button onClick={handleAddButton} size="sm">
               <Plus className="h-4 w-4 mr-2" />
               Add your first button
             </Button>

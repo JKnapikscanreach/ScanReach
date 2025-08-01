@@ -22,7 +22,7 @@ export const MicrositeQRSection: React.FC<MicrositeQRSectionProps> = ({ microsit
   const [logoDataUrl, setLogoDataUrl] = useState<string>('');
   const [qrColor, setQrColor] = useState('#000000');
   const [backgroundColor, setBackgroundColor] = useState('#ffffff');
-  const [logoSize, setLogoSize] = useState(20);
+  const [logoSize, setLogoSize] = useState(37);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [isOrderHistoryModalOpen, setIsOrderHistoryModalOpen] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -237,13 +237,13 @@ export const MicrositeQRSection: React.FC<MicrositeQRSectionProps> = ({ microsit
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-3 pt-2">
+        <div className="grid grid-cols-3 gap-2 pt-2">
           <Button 
             onClick={downloadQR} 
             disabled={!qrDataUrl} 
             variant="outline" 
             size="sm"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 w-full"
           >
             <Download className="w-4 h-4" />
             Download
@@ -253,7 +253,7 @@ export const MicrositeQRSection: React.FC<MicrositeQRSectionProps> = ({ microsit
             onClick={orderStickers} 
             disabled={!qrDataUrl} 
             size="sm"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 w-full"
           >
             <Printer className="w-4 h-4" />
             Buy Stickers
@@ -263,7 +263,7 @@ export const MicrositeQRSection: React.FC<MicrositeQRSectionProps> = ({ microsit
             onClick={() => setIsOrderHistoryModalOpen(true)} 
             variant="outline" 
             size="sm"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 w-full"
           >
             <History className="w-4 h-4" />
             Orders

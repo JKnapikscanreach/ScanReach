@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Eye, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { MicrositeEditor } from '@/components/MicrositeEditor';
 import { toast } from 'sonner';
@@ -26,6 +27,7 @@ export default function MicrositeEdit() {
   
   const [microsite, setMicrosite] = useState<MicrositeData | null>(null);
   const [loading, setLoading] = useState(!isNewMicrosite);
+  const [autoSaving, setAutoSaving] = useState(false);
 
   useEffect(() => {
     if (!isNewMicrosite && id) {
@@ -144,6 +146,11 @@ export default function MicrositeEdit() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {autoSaving && (
+            <Badge variant="secondary" className="text-xs">
+              Auto-saving...
+            </Badge>
+          )}
           <Button 
             variant="outline" 
             size="sm"
@@ -175,6 +182,7 @@ export default function MicrositeEdit() {
         micrositeId={microsite.id}
         onSave={() => toast.success('Microsite saved')}
         onPublish={() => toast.success('Microsite published')}
+        onAutoSavingChange={setAutoSaving}
       />
     </div>
   );

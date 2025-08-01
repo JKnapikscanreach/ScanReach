@@ -20,12 +20,14 @@ interface MicrositeEditorProps {
   micrositeId: string;
   onSave?: () => void;
   onPublish?: () => void;
+  onAutoSavingChange?: (autoSaving: boolean) => void;
 }
 
 export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
   micrositeId,
   onSave,
   onPublish,
+  onAutoSavingChange,
 }) => {
   const {
     content,
@@ -101,6 +103,11 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
     setExpandedCards(new Set(cards.map(card => card.id)));
   }, [cards]);
 
+  // Pass auto-saving state to parent
+  useEffect(() => {
+    onAutoSavingChange?.(autoSaving);
+  }, [autoSaving, onAutoSavingChange]);
+
   const handleSave = useCallback(() => {
     toast({
       title: "Saved",
@@ -140,16 +147,8 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
   return (
     <div className="flex h-screen bg-background">
       {/* Editor Panel */}
-      <div className="flex-1 border-r">
-        <div className="p-4 space-y-4 h-full overflow-y-auto">
-          {/* Auto-saving indicator */}
-          {autoSaving && (
-            <div className="mb-4">
-              <Badge variant="secondary" className="text-xs">
-                Auto-saving...
-              </Badge>
-            </div>
-          )}
+      <div className="flex-1 border-r flex flex-col">
+        <div className="p-4 space-y-4 flex-1 min-h-0 overflow-y-auto">
 
           {/* Combined Title and Header Image */}
           <Card>
