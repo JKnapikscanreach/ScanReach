@@ -13,6 +13,7 @@ import { useMicrosites } from '@/hooks/useMicrosites';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 type SortField = 'name' | 'created_at' | 'scan_count' | 'status';
 type SortDirection = 'asc' | 'desc';
@@ -20,6 +21,7 @@ type StatusFilter = 'all' | 'draft' | 'published';
 
 export default function Microsites() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { microsites, loading, error, refetch } = useMicrosites();
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -43,11 +45,16 @@ export default function Microsites() {
   };
 
   const handleCreateMicrosite = async () => {
+    if (!user) {
+      toast.error('You must be logged in to create a microsite');
+      return;
+    }
+
     try {
       const micrositeId = nanoid();
       const micrositeUrl = `microsite-${nanoid(8)}`;
       
-      // Create a new microsite with auto-generated data
+      // Create a new microsite with actual user ID
       const { error } = await supabase
         .from('microsites')
         .insert({
@@ -55,13 +62,14 @@ export default function Microsites() {
           name: `New Microsite ${Date.now()}`,
           url: micrositeUrl,
           status: 'draft',
-          user_id: 'system', // This should be replaced with actual user ID when auth is implemented
+          user_id: user.id,
           scan_count: 0
         });
 
       if (error) throw error;
 
       toast.success('Microsite created successfully');
+      refetch(); // Refresh the list
       navigate(`/microsites/${micrositeId}/edit`);
     } catch (error) {
       console.error('Error creating microsite:', error);
