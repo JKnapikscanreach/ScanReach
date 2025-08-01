@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Eye, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { MicrositeEditor } from '@/components/MicrositeEditor';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -121,7 +122,7 @@ export default function MicrositeEdit() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-4">
           <Button
             variant="ghost"
@@ -131,26 +132,50 @@ export default function MicrositeEdit() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Microsites
           </Button>
-          <div>
-            <h1 className="text-3xl font-bold">
-              {isNewMicrosite ? 'Create Microsite' : 'Edit Microsite'}
-            </h1>
-            <p className="text-muted-foreground">
-              {isNewMicrosite ? (
-                'Design and publish your new microsite'
-              ) : (
-                <>
-                  Created {new Date(microsite.created_at).toLocaleDateString()} • 
-                  {microsite.scan_count} scans
-                </>
-              )}
-            </p>
+          <div className="text-sm text-muted-foreground">
+            {isNewMicrosite ? (
+              'New microsite'
+            ) : (
+              <>
+                Created {new Date(microsite.created_at).toLocaleDateString()} • 
+                {microsite.scan_count} scans
+              </>
+            )}
           </div>
         </div>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              // Placeholder for save functionality
+              toast.success('Microsite saved');
+            }}
+          >
+            <Save className="h-4 w-4 mr-2" />
+            Save
+          </Button>
+          <Button 
+            size="sm"
+            onClick={() => {
+              // Placeholder for publish functionality  
+              toast.success('Microsite published');
+            }}
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            Publish
+          </Button>
+        </div>
       </div>
+      
+      <Separator className="mb-6" />
 
       {/* Enhanced Editor */}
-      <MicrositeEditor micrositeId={microsite.id} />
+      <MicrositeEditor 
+        micrositeId={microsite.id}
+        onSave={() => toast.success('Microsite saved')}
+        onPublish={() => toast.success('Microsite published')}
+      />
     </div>
   );
 }

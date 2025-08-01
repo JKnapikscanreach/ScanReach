@@ -6,12 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Plus, GripVertical, Save, Eye, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
+import { Plus, GripVertical, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import { useMicrositeContent, MicrositeCard } from '@/hooks/useMicrositeContent';
 import { MicrositeCardEditor } from './MicrositeCardEditor';
 import { MicrositePreview } from './MicrositePreview';
 import { ThemeCustomizer } from './ThemeCustomizer';
 import { HeaderImageUpload } from './HeaderImageUpload';
+import { MicrositeQRSection } from './MicrositeQRSection';
 import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/useDebounce';
 
@@ -150,30 +151,14 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
       {/* Editor Panel */}
       <div className="flex-1 overflow-auto border-r">
         <div className="p-4 space-y-4">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold">Edit Microsite</h1>
-              <p className="text-sm text-muted-foreground">
-                Create and customize your microsite content
-              </p>
+          {/* Auto-saving indicator */}
+          {autoSaving && (
+            <div className="mb-4">
+              <Badge variant="secondary" className="text-xs">
+                Auto-saving...
+              </Badge>
             </div>
-            <div className="flex items-center gap-2">
-              {autoSaving && (
-                <Badge variant="secondary" className="text-xs">
-                  Auto-saving...
-                </Badge>
-              )}
-              <Button variant="outline" onClick={handleSave} size="sm">
-                <Save className="h-4 w-4 mr-2" />
-                Save
-              </Button>
-              <Button onClick={handlePublish} size="sm">
-                <Eye className="h-4 w-4 mr-2" />
-                Publish
-              </Button>
-            </div>
-          </div>
+          )}
 
           {/* Combined Title and Header Image */}
           <Card>
@@ -298,7 +283,7 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
             )}
           </div>
 
-          {/* Theme Customizer - Moved to bottom */}
+          {/* Theme Customizer */}
           {content && (
             <ThemeCustomizer
               themeConfig={content.theme_config}
@@ -310,20 +295,28 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
 
       {/* Preview Panel */}
       <div className="w-2/5 bg-muted/30">
-        <div className="p-4 border-b bg-background">
-          <h3 className="font-semibold">Live Preview</h3>
-          <p className="text-sm text-muted-foreground">
-            See how your microsite will look to visitors
-          </p>
-        </div>
-        <div className="p-4">
-          {content && (
-            <MicrositePreview
-              content={content}
-              cards={cards}
-              title={title}
-            />
-          )}
+        <div className="p-4 space-y-4">
+          {/* QR Code Section */}
+          <MicrositeQRSection micrositeId={micrositeId} />
+          
+          {/* Live Preview */}
+          <div>
+            <div className="mb-4 p-4 border-b bg-background rounded-t-lg">
+              <h3 className="font-semibold">Live Microsite Preview</h3>
+              <p className="text-sm text-muted-foreground">
+                See how your microsite will look to visitors
+              </p>
+            </div>
+            <div className="p-4 bg-background rounded-b-lg">
+              {content && (
+                <MicrositePreview
+                  content={content}
+                  cards={cards}
+                  title={title}
+                />
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
