@@ -84,9 +84,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUpWithEmail = async (email: string, firstName: string, lastName: string, companyName?: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
-    const { error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signInWithOtp({
       email,
-      password: 'temp', // Magic link doesn't use password but it's required
       options: {
         emailRedirectTo: redirectUrl,
         data: {
