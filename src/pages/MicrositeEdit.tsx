@@ -122,68 +122,72 @@ export default function MicrositeEdit() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="h-screen flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/microsites')}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Microsites
-          </Button>
-          <div className="text-sm text-muted-foreground">
-            {isNewMicrosite ? (
-              'New microsite'
-            ) : (
-              <>
-                Created {new Date(microsite.created_at).toLocaleDateString()} • 
-                {microsite.scan_count} scans
-              </>
+      <div className="container mx-auto px-4 py-4 max-w-7xl">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/microsites')}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Microsites
+            </Button>
+            <div className="text-sm text-muted-foreground">
+              {isNewMicrosite ? (
+                'New microsite'
+              ) : (
+                <>
+                  Created {new Date(microsite.created_at).toLocaleDateString()} • 
+                  {microsite.scan_count} scans
+                </>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {autoSaving && (
+              <Badge variant="secondary" className="text-xs">
+                Auto-saving...
+              </Badge>
             )}
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => {
+                // Placeholder for save functionality
+                toast.success('Microsite saved');
+              }}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Save
+            </Button>
+            <Button 
+              size="sm"
+              onClick={() => {
+                // Placeholder for publish functionality  
+                toast.success('Microsite published');
+              }}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Publish
+            </Button>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {autoSaving && (
-            <Badge variant="secondary" className="text-xs">
-              Auto-saving...
-            </Badge>
-          )}
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => {
-              // Placeholder for save functionality
-              toast.success('Microsite saved');
-            }}
-          >
-            <Save className="h-4 w-4 mr-2" />
-            Save
-          </Button>
-          <Button 
-            size="sm"
-            onClick={() => {
-              // Placeholder for publish functionality  
-              toast.success('Microsite published');
-            }}
-          >
-            <Eye className="h-4 w-4 mr-2" />
-            Publish
-          </Button>
-        </div>
+        
+        <Separator />
       </div>
-      
-      <Separator className="mb-6" />
 
-      {/* Enhanced Editor */}
-      <MicrositeEditor 
-        micrositeId={microsite.id}
-        onSave={() => toast.success('Microsite saved')}
-        onPublish={() => toast.success('Microsite published')}
-        onAutoSavingChange={setAutoSaving}
-      />
+      {/* Editor Container - Takes remaining height */}
+      <div className="flex-1 min-h-0 container mx-auto px-4 max-w-7xl">
+        <MicrositeEditor 
+          micrositeId={microsite.id}
+          onSave={() => toast.success('Microsite saved')}
+          onPublish={() => toast.success('Microsite published')}
+          onAutoSavingChange={setAutoSaving}
+        />
+      </div>
     </div>
   );
 }
