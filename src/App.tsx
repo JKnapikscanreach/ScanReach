@@ -105,8 +105,8 @@ const App = () => {
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>
+              <DebugFloatingButton />
             </BrowserRouter>
-            <DebugFloatingButton />
           </TooltipProvider>
         </DebugInitializer>
       </AuthProvider>
