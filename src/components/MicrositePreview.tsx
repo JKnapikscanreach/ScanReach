@@ -15,34 +15,15 @@ export const MicrositePreview: React.FC<MicrositePreviewProps> = React.memo(({
   cards,
   title,
 }) => {
-  const getButtonIcon = (iconName: string, actionType: string) => {
-    // Use custom icon if specified, otherwise fall back to action type
-    switch (iconName || 'default') {
-      case 'Globe':
-        return <Globe className="h-4 w-4" />;
-      case 'Phone':
+  const getButtonIcon = (actionType: string) => {
+    switch (actionType) {
+      case 'tel':
         return <Phone className="h-4 w-4" />;
-      case 'Mail':
+      case 'mailto':
         return <Mail className="h-4 w-4" />;
-      case 'MapPin':
-        return <MapPin className="h-4 w-4" />;
-      case 'MessageCircle':
-        return <MessageCircle className="h-4 w-4" />;
-      case 'Heart':
-        return <Heart className="h-4 w-4" />;
-      case 'Star':
-        return <Star className="h-4 w-4" />;
+      case 'url':
       default:
-        // Fallback to action type icons
-        switch (actionType) {
-          case 'tel':
-            return <Phone className="h-4 w-4" />;
-          case 'mailto':
-            return <Mail className="h-4 w-4" />;
-          case 'url':
-          default:
-            return <ExternalLink className="h-4 w-4" />;
-        }
+        return <ExternalLink className="h-4 w-4" />;
     }
   };
 
@@ -63,14 +44,25 @@ export const MicrositePreview: React.FC<MicrositePreviewProps> = React.memo(({
   const formatContent = (content: string | null) => {
     if (!content) return null;
     
-    // Simple text formatting - convert line breaks to paragraphs
-    const paragraphs = content.split('\n').filter(p => p.trim().length > 0);
-    
-    return paragraphs.map((paragraph, index) => (
-      <p key={index} className="mb-2 last:mb-0">
-        {paragraph}
-      </p>
-    ));
+    // Enhanced text formatting with bold, italic, underline support
+    const formattedText = content
+      // Bold: **text** or __text__
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/__(.*?)__/g, '<strong>$1</strong>')
+      // Italic: *text* or _text_
+      .replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>')
+      .replace(/(?<!_)_([^_]+)_(?!_)/g, '<em>$1</em>')
+      // Underline: <u>text</u>
+      .replace(/<u>(.*?)<\/u>/g, '<u>$1</u>')
+      // Line breaks
+      .replace(/\n/g, '<br>');
+
+    return (
+      <div 
+        dangerouslySetInnerHTML={{ __html: formattedText }}
+        className="text-sm leading-relaxed"
+      />
+    );
   };
 
   return (
@@ -83,11 +75,12 @@ export const MicrositePreview: React.FC<MicrositePreviewProps> = React.memo(({
     >
       {/* Header Image */}
       {content.header_image_url && (
-        <div className="aspect-[3/1] bg-gray-100 overflow-hidden">
+        <div className="bg-gray-100 overflow-hidden flex items-center justify-center p-4">
           <img
             src={content.header_image_url}
             alt="Header"
-            className="w-full h-full object-cover"
+            className="object-contain"
+            style={{ maxWidth: '37%', maxHeight: '150px' }}
           />
         </div>
       )}
@@ -124,7 +117,7 @@ export const MicrositePreview: React.FC<MicrositePreviewProps> = React.memo(({
 
               {/* Card Content */}
               {card.content && (
-                <div className="text-sm leading-relaxed" style={{ color: content.theme_config.text }}>
+                <div style={{ color: content.theme_config.text }}>
                   {formatContent(card.content)}
                 </div>
               )}
@@ -156,7 +149,7 @@ export const MicrositePreview: React.FC<MicrositePreviewProps> = React.memo(({
                         }}
                         onClick={() => handleButtonClick(button.action_type, button.action_value)}
                       >
-                        {getButtonIcon((button as any).icon, button.action_type)}
+                        {getButtonIcon(button.action_type)}
                         <span className="ml-2">{button.label}</span>
                       </Button>
                     ))}

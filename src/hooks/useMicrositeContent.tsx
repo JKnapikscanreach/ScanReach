@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useSmartAutoSave } from './useSmartAutoSave';
 
 export interface MicrositeContent {
   id: string;
@@ -60,7 +61,25 @@ export const useMicrositeContent = (micrositeId: string) => {
   const [cards, setCards] = useState<MicrositeCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [autoSaving, setAutoSaving] = useState(false);
+
+  // Smart auto-save for content
+  const { queueUpdate: queueContentUpdate, isSaving: isContentSaving } = useSmartAutoSave<MicrositeContent>(
+    async (updates) => {
+      if (!content) return;
+      const { data, error } = await supabase
+        .from('microsite_content')
+        .update(updates)
+        .eq('id', content.id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      setContent({
+        ...data,
+        theme_config: parseThemeConfig(data.theme_config)
+      });
+    }
+  );
 
   const fetchContent = async () => {
     try {
@@ -141,26 +160,13 @@ export const useMicrositeContent = (micrositeId: string) => {
   const updateContent = async (updates: Partial<MicrositeContent>) => {
     if (!content) return;
 
-    try {
-      setAutoSaving(true);
-      const { data, error } = await supabase
-        .from('microsite_content')
-        .update(updates)
-        .eq('id', content.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      setContent({
-        ...data,
-        theme_config: parseThemeConfig(data.theme_config)
-      });
-    } catch (error) {
-      console.error('Error updating content:', error);
-      setError(error instanceof Error ? error.message : 'Failed to save');
-    } finally {
-      setAutoSaving(false);
-    }
+    // Update local state immediately for responsive UI
+    setContent(prev => prev ? { ...prev, ...updates } : null);
+    
+    // Queue the update for smart auto-save
+    Object.entries(updates).forEach(([key, value]) => {
+      queueContentUpdate(key, value);
+    });
   };
 
   const addCard = async () => {
@@ -188,8 +194,13 @@ export const useMicrositeContent = (micrositeId: string) => {
   };
 
   const updateCard = async (cardId: string, updates: Partial<MicrositeCard>) => {
+    // Update local state immediately for responsive UI
+    setCards(prev => prev.map(card => 
+      card.id === cardId ? { ...card, ...updates } : card
+    ));
+
+    // Save to database with debounced batching
     try {
-      setAutoSaving(true);
       const { data, error } = await supabase
         .from('microsite_cards')
         .update(updates)
@@ -198,15 +209,9 @@ export const useMicrositeContent = (micrositeId: string) => {
         .single();
 
       if (error) throw error;
-      
-      setCards(prev => prev.map(card => 
-        card.id === cardId ? { ...card, ...data } : card
-      ));
     } catch (error) {
       console.error('Error updating card:', error);
       setError(error instanceof Error ? error.message : 'Failed to save card');
-    } finally {
-      setAutoSaving(false);
     }
   };
 
@@ -307,6 +312,31 @@ export const useMicrositeContent = (micrositeId: string) => {
     }
   };
 
+  const reorderButtons = async (cardId: string, reorderedButtons: MicrositeButton[]) => {
+    try {
+      // Update local state immediately
+      setCards(prev => prev.map(card => 
+        card.id === cardId ? { ...card, buttons: reorderedButtons } : card
+      ));
+
+      // Update sort order in database
+      const updates = reorderedButtons.map((button, index) => ({
+        id: button.id,
+        sort_order: index
+      }));
+
+      for (const update of updates) {
+        await supabase
+          .from('microsite_buttons')
+          .update({ sort_order: update.sort_order })
+          .eq('id', update.id);
+      }
+    } catch (error) {
+      console.error('Error reordering buttons:', error);
+      setError(error instanceof Error ? error.message : 'Failed to reorder buttons');
+    }
+  };
+
   useEffect(() => {
     if (micrositeId) {
       fetchContent();
@@ -318,7 +348,7 @@ export const useMicrositeContent = (micrositeId: string) => {
     cards,
     loading,
     error,
-    autoSaving,
+    autoSaving: isContentSaving,
     refetch: fetchContent,
     updateContent,
     addCard,
@@ -328,5 +358,6 @@ export const useMicrositeContent = (micrositeId: string) => {
     addButton,
     updateButton,
     deleteButton,
+    reorderButtons,
   };
 };

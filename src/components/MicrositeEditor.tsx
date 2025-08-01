@@ -41,6 +41,7 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
     addButton,
     updateButton,
     deleteButton,
+    reorderButtons,
   } = useMicrositeContent(micrositeId);
   
   const { toast } = useToast();
@@ -48,7 +49,7 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   
   // Debounced title update
-  const debouncedTitle = useDebounce(title, 600);
+  const debouncedTitle = useDebounce(title, 500);
   
   useEffect(() => {
     if (content?.title) {
@@ -139,8 +140,8 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
   return (
     <div className="flex h-screen bg-background">
       {/* Editor Panel */}
-      <div className="flex-1 overflow-y-auto border-r">
-        <div className="p-4 space-y-4 max-h-screen">
+      <div className="flex-1 border-r">
+        <div className="p-4 space-y-4 h-full overflow-y-auto">
           {/* Auto-saving indicator */}
           {autoSaving && (
             <div className="mb-4">
@@ -234,13 +235,14 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
 
                             {/* Card Content - Always Expanded */}
                             <div className="p-3">
-                              <MicrositeCardEditor
-                                card={card}
-                                onUpdate={(updates) => updateCard(card.id, updates)}
-                                onAddButton={(button) => addButton(card.id, button)}
-                                onUpdateButton={updateButton}
-                                onDeleteButton={deleteButton}
-                              />
+                                <MicrositeCardEditor
+                                  card={card}
+                                  onUpdate={(updates) => updateCard(card.id, updates)}
+                                  onAddButton={(button) => addButton(card.id, button)}
+                                  onUpdateButton={updateButton}
+                                  onDeleteButton={deleteButton}
+                                  onReorderButtons={(buttons) => reorderButtons(card.id, buttons)}
+                                />
                             </div>
                           </div>
                         )}
@@ -274,8 +276,8 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
       </div>
 
       {/* Preview Panel */}
-      <div className="w-2/5 bg-muted/30 overflow-y-auto">
-        <div className="p-4 space-y-4 max-h-screen">
+      <div className="w-2/5 bg-muted/30">
+        <div className="p-4 space-y-4 h-full overflow-y-auto">
           {/* QR Code Section */}
           <MicrositeQRSection micrositeId={micrositeId} />
           
