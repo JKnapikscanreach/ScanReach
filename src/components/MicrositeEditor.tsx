@@ -15,6 +15,7 @@ import { HeaderImageUpload } from './HeaderImageUpload';
 import { MicrositeQRSection } from './MicrositeQRSection';
 import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/useDebounce';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MicrositeEditorProps {
   micrositeId: string;
@@ -62,8 +63,25 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
   useEffect(() => {
     if (debouncedTitle !== content?.title && content) {
       updateContent({ title: debouncedTitle });
+      // Also update the microsite name in the microsites table
+      if (debouncedTitle) {
+        updateMicrositeName(debouncedTitle);
+      }
     }
   }, [debouncedTitle, content?.title, updateContent]);
+
+  const updateMicrositeName = useCallback(async (name: string) => {
+    try {
+      const { error } = await supabase
+        .from('microsites')
+        .update({ name })
+        .eq('id', micrositeId);
+      
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating microsite name:', error);
+    }
+  }, [micrositeId]);
 
   const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.slice(0, 60); // Max 60 chars

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { MicrositePreview } from '@/components/MicrositePreview';
+import { PublicMicrositeView } from '@/components/PublicMicrositeView';
 import { useMicrositeContent } from '@/hooks/useMicrositeContent';
 
 interface MicrositeData {
@@ -100,12 +100,10 @@ export default function PublicMicrosite() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <MicrositePreview 
-        content={content}
-        cards={cards}
-        title={microsite.name}
-      />
-    </div>
+    <PublicMicrositeView 
+      content={content}
+      cards={cards}
+      title={content?.title || microsite.name}
+    />
   );
 }

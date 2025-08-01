@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Eye, Globe } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Globe, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -233,7 +233,7 @@ export default function MicrositeEdit() {
                 size="sm"
                 onClick={() => window.open(getPublicUrl(), '_blank')}
               >
-                <Globe className="h-4 w-4 mr-2" />
+                <ExternalLink className="h-4 w-4 mr-2" />
                 View Live
               </Button>
             )}
