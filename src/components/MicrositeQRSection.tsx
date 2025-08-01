@@ -1,15 +1,16 @@
-import { useState, useRef, useEffect } from 'react';
-import QRCode from 'qrcode';
-import { useDropzone } from 'react-dropzone';
+import React, { useState, useRef, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
-import { Upload, Download, Printer, History } from 'lucide-react';
-import { toast } from 'sonner';
+import { Download, Printer, History, Upload } from 'lucide-react';
+import { useDropzone } from 'react-dropzone';
+import QRCode from 'qrcode';
 import { StickerOrderModal } from './StickerOrderModal';
 import { OrderHistoryModal } from './OrderHistoryModal';
+import { ColorPicker } from '@/components/ui/color-picker';
+import { toast } from 'sonner';
 
 interface MicrositeQRSectionProps {
   micrositeId: string;
@@ -160,45 +161,18 @@ export const MicrositeQRSection: React.FC<MicrositeQRSectionProps> = ({ microsit
 
           {/* Right side - Controls */}
           <div className="space-y-4">
-            {/* Colors */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="qr-color" className="text-sm font-medium">QR Code</Label>
-                <div className="flex gap-2 items-center">
-                  <Input 
-                    id="qr-color" 
-                    type="color" 
-                    value={qrColor} 
-                    onChange={e => setQrColor(e.target.value)}
-                    className="w-12 h-10 p-0 border-0" 
-                  />
-                  <Input 
-                    value={qrColor} 
-                    onChange={e => setQrColor(e.target.value)}
-                    placeholder="#000000"
-                    className="text-sm"
-                  />
-                </div>
-              </div>
+            <div className="space-y-4">
+              <ColorPicker
+                label="QR Code Color"
+                value={qrColor}
+                onChange={setQrColor}
+              />
 
-              <div>
-                <Label htmlFor="bg-color" className="text-sm font-medium">Background</Label>
-                <div className="flex gap-2 items-center">
-                  <Input 
-                    id="bg-color" 
-                    type="color" 
-                    value={backgroundColor} 
-                    onChange={e => setBackgroundColor(e.target.value)}
-                    className="w-12 h-10 p-0 border-0" 
-                  />
-                  <Input 
-                    value={backgroundColor} 
-                    onChange={e => setBackgroundColor(e.target.value)}
-                    placeholder="#ffffff"
-                    className="text-sm"
-                  />
-                </div>
-              </div>
+              <ColorPicker
+                label="Background Color"
+                value={backgroundColor}
+                onChange={setBackgroundColor}
+              />
             </div>
 
             {/* Logo Upload */}

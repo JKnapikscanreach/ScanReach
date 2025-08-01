@@ -83,10 +83,7 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
   }, [cards, reorderCards]);
 
   const handleAddCard = useCallback(async () => {
-    const newCard = await addCard();
-    if (newCard) {
-      setExpandedCards(prev => new Set([...prev, newCard.id]));
-    }
+    await addCard();
   }, [addCard]);
 
   const handleDeleteCard = useCallback(async (cardId: string) => {
@@ -98,17 +95,10 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
     });
   }, [deleteCard]);
 
-  const toggleCardExpanded = useCallback((cardId: string) => {
-    setExpandedCards(prev => {
-      const next = new Set(prev);
-      if (next.has(cardId)) {
-        next.delete(cardId);
-      } else {
-        next.add(cardId);
-      }
-      return next;
-    });
-  }, []);
+  // Always expand all cards by default
+  useEffect(() => {
+    setExpandedCards(new Set(cards.map(card => card.id)));
+  }, [cards]);
 
   const handleSave = useCallback(() => {
     toast({
@@ -218,27 +208,19 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
                           >
                             {/* Card Header */}
                             <div className="flex items-center justify-between p-3 border-b">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-1">
                                 <div
                                   {...provided.dragHandleProps}
                                   className="text-muted-foreground hover:text-foreground cursor-grab"
                                 >
                                   <GripVertical className="h-4 w-4" />
                                 </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => toggleCardExpanded(card.id)}
-                                >
-                                  {expandedCards.has(card.id) ? (
-                                    <ChevronDown className="h-4 w-4" />
-                                  ) : (
-                                    <ChevronRight className="h-4 w-4" />
-                                  )}
-                                </Button>
-                                <span className="font-medium">
-                                  Card {index + 1}
-                                </span>
+                                <Input
+                                  placeholder={`Card ${index + 1} title...`}
+                                  value={card.title || ''}
+                                  onChange={(e) => updateCard(card.id, { title: e.target.value })}
+                                  className="border-none px-2 py-1 focus-visible:ring-0 font-medium"
+                                />
                               </div>
                               <Button
                                 variant="ghost"
@@ -250,18 +232,16 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
                               </Button>
                             </div>
 
-                            {/* Card Content */}
-                            {expandedCards.has(card.id) && (
-                              <div className="p-3">
-                                <MicrositeCardEditor
-                                  card={card}
-                                  onUpdate={(updates) => updateCard(card.id, updates)}
-                                  onAddButton={(button) => addButton(card.id, button)}
-                                  onUpdateButton={updateButton}
-                                  onDeleteButton={deleteButton}
-                                />
-                              </div>
-                            )}
+                            {/* Card Content - Always Expanded */}
+                            <div className="p-3">
+                              <MicrositeCardEditor
+                                card={card}
+                                onUpdate={(updates) => updateCard(card.id, updates)}
+                                onAddButton={(button) => addButton(card.id, button)}
+                                onUpdateButton={updateButton}
+                                onDeleteButton={deleteButton}
+                              />
+                            </div>
                           </div>
                         )}
                       </Draggable>

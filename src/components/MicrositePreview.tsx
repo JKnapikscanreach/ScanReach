@@ -94,6 +94,16 @@ export const MicrositePreview: React.FC<MicrositePreviewProps> = ({
             }}
           >
             <CardContent className="p-4 space-y-4">
+              {/* Card Title */}
+              {card.title && (
+                <h3 
+                  className="text-lg font-semibold"
+                  style={{ color: content.theme_config.text }}
+                >
+                  {card.title}
+                </h3>
+              )}
+
               {/* Card Content */}
               {card.content && (
                 <div className="text-sm leading-relaxed" style={{ color: content.theme_config.text }}>

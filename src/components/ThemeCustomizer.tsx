@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
-import { SketchPicker, ColorResult } from 'react-color';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { ColorPicker } from '@/components/ui/color-picker';
 import { Palette } from 'lucide-react';
 
 interface ThemeConfig {
@@ -25,11 +24,8 @@ export const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
   const [activeColorPicker, setActiveColorPicker] = useState<string | null>(null);
   const [selectedPreset, setSelectedPreset] = useState<string>('user-defined');
 
-  const handleColorChange = (colorType: keyof ThemeConfig, color: ColorResult) => {
-    const newTheme = {
-      ...themeConfig,
-      [colorType]: color.hex,
-    };
+  const handleColorChange = (colorType: keyof ThemeConfig, color: string) => {
+    const newTheme = { ...themeConfig, [colorType]: color };
     onThemeUpdate(newTheme);
     setSelectedPreset('user-defined');
   };
@@ -75,58 +71,6 @@ export const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
     }
   };
 
-  const ColorPicker: React.FC<{
-    colorType: keyof ThemeConfig;
-    label: string;
-    color: string;
-  }> = ({ colorType, label, color }) => {
-    const validation = getColorValidation(colorType, color);
-    const requirement = getColorRequirement(colorType);
-    
-    return (
-      <div className="space-y-2">
-        <Label>{label}</Label>
-        <Popover 
-          open={activeColorPicker === colorType}
-          onOpenChange={(open) => setActiveColorPicker(open ? colorType : null)}
-        >
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={`w-full justify-start gap-2 ${
-                validation === 'invalid' ? 'border-destructive' : ''
-              }`}
-            >
-              <div
-                className="w-6 h-6 rounded-md border"
-                style={{ backgroundColor: color }}
-              />
-              <span>{color}</span>
-              <Palette className="h-4 w-4 ml-auto" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0">
-            <SketchPicker
-              color={color}
-              onChange={(color) => handleColorChange(colorType, color)}
-              disableAlpha
-            />
-          </PopoverContent>
-        </Popover>
-        <div className="text-xs text-muted-foreground">
-          {requirement}
-        </div>
-        {validation === 'invalid' && (
-          <div className="text-xs text-destructive">
-            {colorType === 'background' 
-              ? 'Background color should be light for readability'
-              : 'Color should be dark for better contrast and readability'
-            }
-          </div>
-        )}
-      </div>
-    );
-  };
 
   const presetThemes = [
     {
@@ -182,7 +126,7 @@ export const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
   };
 
   // Check if current colors match any preset
-  React.useEffect(() => {
+  useEffect(() => {
     const matchingPreset = presetThemes.find(preset => 
       preset.colors.primary === themeConfig.primary &&
       preset.colors.text === themeConfig.text &&
@@ -190,7 +134,7 @@ export const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
     );
     
     setSelectedPreset(matchingPreset?.id || 'user-defined');
-  }, [themeConfig, presetThemes]);
+  }, [themeConfig]);
 
   return (
     <Card>
@@ -201,8 +145,7 @@ export const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* 2x2 Grid Layout */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-4">
           {/* Preset Dropdown */}
           <div className="space-y-2">
             <Label>Preset Theme</Label>
@@ -237,25 +180,20 @@ export const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
             </Select>
           </div>
 
-          {/* Primary Color */}
-          <ColorPicker
-            colorType="primary"
-            label="Primary Color"
-            color={themeConfig.primary}
+          <ColorPicker 
+            label="Primary Color" 
+            value={themeConfig.primary}
+            onChange={(color) => handleColorChange('primary', color)}
           />
-
-          {/* Text Color */}
-          <ColorPicker
-            colorType="text"
-            label="Text Color"
-            color={themeConfig.text}
+          <ColorPicker 
+            label="Text Color" 
+            value={themeConfig.text}
+            onChange={(color) => handleColorChange('text', color)}
           />
-
-          {/* Background Color */}
-          <ColorPicker
-            colorType="background"
-            label="Background Color"
-            color={themeConfig.background}
+          <ColorPicker 
+            label="Background Color" 
+            value={themeConfig.background}
+            onChange={(color) => handleColorChange('background', color)}
           />
         </div>
 

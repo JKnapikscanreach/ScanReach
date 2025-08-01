@@ -22,6 +22,7 @@ export interface MicrositeCard {
   content: string | null;
   media_url: string | null;
   is_collapsed: boolean;
+  title: string | null;
   created_at: string;
   updated_at: string;
   buttons: MicrositeButton[];
@@ -121,6 +122,7 @@ export const useMicrositeContent = (micrositeId: string) => {
       // Process cards data
       const processedCards = (cardsData || []).map(card => ({
         ...card,
+        title: (card as any).title || null,
         buttons: (card.buttons || []).map(btn => ({
           ...btn,
           action_type: btn.action_type as 'tel' | 'mailto' | 'url'
@@ -164,19 +166,20 @@ export const useMicrositeContent = (micrositeId: string) => {
   const addCard = async () => {
     try {
       const maxSortOrder = Math.max(...cards.map(c => c.sort_order), -1);
-      const { data, error } = await supabase
-        .from('microsite_cards')
-        .insert({
-          microsite_id: micrositeId,
-          sort_order: maxSortOrder + 1,
-          content: '',
-          is_collapsed: false
-        })
-        .select()
-        .single();
+        const { data, error } = await supabase
+          .from('microsite_cards')
+          .insert({
+            microsite_id: micrositeId,
+            sort_order: maxSortOrder + 1,
+            content: '',
+            title: null,
+            is_collapsed: false
+          })
+          .select()
+          .single();
 
       if (error) throw error;
-      setCards(prev => [...prev, { ...data, buttons: [] }]);
+      setCards(prev => [...prev, { ...data, title: (data as any).title || null, buttons: [] }]);
       return data;
     } catch (error) {
       console.error('Error adding card:', error);

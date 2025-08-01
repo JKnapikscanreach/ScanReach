@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Trash2, Phone, Mail, ExternalLink } from 'lucide-react';
+import { Plus, Trash2, Phone, Mail, ExternalLink, X } from 'lucide-react';
 import { MicrositeCard, MicrositeButton } from '@/hooks/useMicrositeContent';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useEffect } from 'react';
@@ -55,19 +55,6 @@ export const MicrositeCardEditor: React.FC<MicrositeCardEditorProps> = ({
   const handleButtonUpdate = useCallback((buttonId: string, field: keyof MicrositeButton, value: string) => {
     onUpdateButton(buttonId, { [field]: value });
   }, [onUpdateButton]);
-
-  const getButtonIcon = (actionType: string) => {
-    switch (actionType) {
-      case 'tel':
-        return <Phone className="h-4 w-4" />;
-      case 'mailto':
-        return <Mail className="h-4 w-4" />;
-      case 'url':
-        return <ExternalLink className="h-4 w-4" />;
-      default:
-        return <ExternalLink className="h-4 w-4" />;
-    }
-  };
 
   const getActionValuePlaceholder = (actionType: string) => {
     switch (actionType) {
@@ -126,99 +113,59 @@ export const MicrositeCardEditor: React.FC<MicrositeCardEditorProps> = ({
           )}
         </div>
 
-        {card.buttons.map((button) => (
-          <Card key={button.id} className="p-4">
-            <div className="space-y-4">
+        {card.buttons.map((button, index) => (
+          <Card key={button.id} className="p-3">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {getButtonIcon(button.action_type)}
-                  <span className="font-medium">Button {button.sort_order + 1}</span>
-                </div>
+                <Input
+                  placeholder={`Button ${index + 1} label...`}
+                  value={button.label}
+                  onChange={(e) => handleButtonUpdate(button.id, 'label', e.target.value)}
+                  className="flex-1 mr-2 font-medium"
+                  maxLength={30}
+                />
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => onDeleteButton(button.id)}
-                  className="text-destructive hover:text-destructive"
+                  className="text-destructive hover:text-destructive h-8 w-8 p-0"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <X className="h-3 w-3" />
                 </Button>
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor={`button-label-${button.id}`}>Label (max 30 chars)</Label>
-                  <Input
-                    id={`button-label-${button.id}`}
-                    value={button.label}
-                    onChange={(e) => handleButtonUpdate(button.id, 'label', e.target.value.slice(0, 30))}
-                    placeholder="Button label"
-                    maxLength={30}
-                  />
-                  <div className="text-xs text-muted-foreground">
-                    {button.label.length}/30 characters
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor={`button-type-${button.id}`}>Action Type</Label>
-                  <Select
-                    value={button.action_type}
-                    onValueChange={(value) => {
-                      handleButtonUpdate(button.id, 'action_type', value);
-                      // Reset action value when type changes
-                      handleButtonUpdate(button.id, 'action_value', '');
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="url">
-                        <div className="flex items-center gap-2">
-                          <ExternalLink className="h-4 w-4" />
-                          Website URL
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="tel">
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4" />
-                          Phone Number
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="mailto">
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4" />
-                          Email Address
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor={`button-value-${button.id}`}>
-                  {button.action_type === 'tel' ? 'Phone Number' : 
-                   button.action_type === 'mailto' ? 'Email Address' : 'Website URL'}
-                </Label>
+              
+              <div className="grid grid-cols-2 gap-2">
+                <Select
+                  value={button.action_type}
+                  onValueChange={(value) => {
+                    handleButtonUpdate(button.id, 'action_type', value);
+                    handleButtonUpdate(button.id, 'action_value', '');
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="url">Website URL</SelectItem>
+                    <SelectItem value="tel">Phone Number</SelectItem>
+                    <SelectItem value="mailto">Email Address</SelectItem>
+                  </SelectContent>
+                </Select>
+                
                 <Input
-                  id={`button-value-${button.id}`}
+                  placeholder={getActionValuePlaceholder(button.action_type)}
                   value={button.action_value}
                   onChange={(e) => handleButtonUpdate(button.id, 'action_value', e.target.value)}
-                  placeholder={getActionValuePlaceholder(button.action_type)}
-                  className={
-                    button.action_value && !validateActionValue(button.action_type, button.action_value)
-                      ? 'border-destructive'
-                      : ''
-                  }
+                  className={!validateActionValue(button.action_type, button.action_value) ? 'border-destructive' : ''}
                 />
-                {button.action_value && !validateActionValue(button.action_type, button.action_value) && (
-                  <div className="text-xs text-destructive">
-                    Please enter a valid {button.action_type === 'tel' ? 'phone number' : 
-                                         button.action_type === 'mailto' ? 'email address' : 'URL'}
-                  </div>
-                )}
               </div>
+              
+              {!validateActionValue(button.action_type, button.action_value) && button.action_value && (
+                <p className="text-xs text-destructive">
+                  Please enter a valid {button.action_type === 'tel' ? 'phone number' : 
+                                      button.action_type === 'mailto' ? 'email address' : 'URL'}
+                </p>
+              )}
             </div>
           </Card>
         ))}
