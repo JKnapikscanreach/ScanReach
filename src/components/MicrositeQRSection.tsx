@@ -28,7 +28,7 @@ export const MicrositeQRSection: React.FC<MicrositeQRSectionProps> = ({ microsit
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Generate microsite URL
-  const micrositeUrl = `https://example.com/m/${micrositeId}`;
+  const micrositeUrl = `https://omglnkwppbzviojlnlxm.lovableproject.com/m/${micrositeId}`;
 
   const onDrop = (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];

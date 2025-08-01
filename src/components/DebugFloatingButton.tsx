@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MasterDebugModal } from './MasterDebugModal';
@@ -9,6 +10,12 @@ import { Bug, BugOff } from 'lucide-react';
 export const DebugFloatingButton: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const { isEnabled, toggleDebug, entries } = useDebug();
+  const location = useLocation();
+
+  // Don't show debug button on public microsite pages
+  if (location.pathname.startsWith('/m/')) {
+    return null;
+  }
 
   // Add keyboard shortcuts
   useDebugKeyboard(() => setModalOpen(true));

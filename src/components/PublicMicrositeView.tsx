@@ -66,12 +66,13 @@ export const PublicMicrositeView: React.FC<PublicMicrositeViewProps> = React.mem
 
   return (
     <div 
-      className="min-h-screen w-full"
+      className="min-h-screen w-full flex justify-center"
       style={{
         backgroundColor: content.theme_config.background,
         color: content.theme_config.text,
       }}
     >
+      <div className="w-full max-w-md">
       {/* Header Image */}
       {content.header_image_url && (
         <div className="w-full flex items-center justify-center py-8 px-4">
@@ -170,6 +171,7 @@ export const PublicMicrositeView: React.FC<PublicMicrositeViewProps> = React.mem
             <p className="text-lg">No content available</p>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

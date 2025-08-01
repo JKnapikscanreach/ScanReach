@@ -17,8 +17,8 @@ export function Header() {
   const location = useLocation();
   const { user, signOut, isAdmin } = useAuth();
 
-  // Don't show header on auth page
-  if (location.pathname === '/auth') {
+  // Don't show header on auth page or public microsite pages
+  if (location.pathname === '/auth' || location.pathname.startsWith('/m/')) {
     return null;
   }
 
