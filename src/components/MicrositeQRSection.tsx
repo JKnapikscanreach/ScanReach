@@ -11,6 +11,7 @@ import { StickerOrderModal } from './StickerOrderModal';
 import { OrderHistoryModal } from './OrderHistoryModal';
 import { ColorPicker } from '@/components/ui/color-picker';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MicrositeQRSectionProps {
   micrositeId: string;
@@ -25,10 +26,37 @@ export const MicrositeQRSection: React.FC<MicrositeQRSectionProps> = ({ microsit
   const [logoSize, setLogoSize] = useState(37);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [isOrderHistoryModalOpen, setIsOrderHistoryModalOpen] = useState(false);
+  const [micrositeUrl, setMicrositeUrl] = useState<string>('');
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Generate microsite URL
-  const micrositeUrl = `https://omglnkwppbzviojlnlxm.lovableproject.com/m/${micrositeId}`;
+  // Fetch microsite data to get the correct URL
+  useEffect(() => {
+    const fetchMicrositeUrl = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('microsites')
+          .select('url')
+          .eq('id', micrositeId)
+          .single();
+
+        if (error) {
+          console.error('Error fetching microsite:', error);
+          return;
+        }
+
+        if (data?.url) {
+          // Use the correct domain and microsite URL
+          setMicrositeUrl(`https://7507eaf6-2c06-4c47-bd6c-93721dc22e86.lovableproject.com/m/${data.url}`);
+        }
+      } catch (error) {
+        console.error('Error fetching microsite URL:', error);
+      }
+    };
+
+    if (micrositeId) {
+      fetchMicrositeUrl();
+    }
+  }, [micrositeId]);
 
   const onDrop = (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -127,8 +155,10 @@ export const MicrositeQRSection: React.FC<MicrositeQRSectionProps> = ({ microsit
   };
 
   useEffect(() => {
-    generateQR();
-  }, [qrColor, backgroundColor, logoDataUrl, logoSize, micrositeId]);
+    if (micrositeUrl) {
+      generateQR();
+    }
+  }, [qrColor, backgroundColor, logoDataUrl, logoSize, micrositeUrl]);
 
   return (
     <Card>
