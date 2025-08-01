@@ -55,11 +55,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('users')
         .select('is_admin')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        setIsAdmin(false);
+        return;
+      }
       
       setIsAdmin(data?.is_admin || false);
     } catch (error) {
