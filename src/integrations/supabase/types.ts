@@ -75,15 +75,7 @@ export type Database = {
           sort_order?: number
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "microsite_buttons_card_id_fkey"
-            columns: ["card_id"]
-            isOneToOne: false
-            referencedRelation: "microsite_cards"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       microsite_cards: {
         Row: {
@@ -94,6 +86,7 @@ export type Database = {
           media_url: string | null
           microsite_id: string
           sort_order: number
+          title: string | null
           updated_at: string
         }
         Insert: {
@@ -104,6 +97,7 @@ export type Database = {
           media_url?: string | null
           microsite_id: string
           sort_order?: number
+          title?: string | null
           updated_at?: string
         }
         Update: {
@@ -114,17 +108,10 @@ export type Database = {
           media_url?: string | null
           microsite_id?: string
           sort_order?: number
+          title?: string | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "microsite_cards_microsite_id_fkey"
-            columns: ["microsite_id"]
-            isOneToOne: false
-            referencedRelation: "microsites"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       microsite_content: {
         Row: {
@@ -154,15 +141,7 @@ export type Database = {
           title?: string | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "microsite_content_microsite_id_fkey"
-            columns: ["microsite_id"]
-            isOneToOne: true
-            referencedRelation: "microsites"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       microsite_scans: {
         Row: {
@@ -189,15 +168,7 @@ export type Database = {
           scanned_at?: string
           user_agent?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "microsite_scans_microsite_id_fkey"
-            columns: ["microsite_id"]
-            isOneToOne: false
-            referencedRelation: "microsites"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       microsites: {
         Row: {
@@ -233,15 +204,7 @@ export type Database = {
           url?: string | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "microsites_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       order_items: {
         Row: {
@@ -499,7 +462,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_current_user_admin_status: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
