@@ -30,15 +30,16 @@ export function Header() {
     <header className="bg-background border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <div className="flex-shrink-0">
-            <Link to="/" className="flex items-center">
-              <span className="text-xl font-bold text-foreground">Scan Reach</span>
-            </Link>
-          </div>
+          {/* Logo and Navigation */}
+          <div className="flex items-center space-x-8">
+            <div className="flex-shrink-0">
+              <Link to="/" className="flex items-center">
+                <span className="text-3xl font-bold text-foreground">Scan Reach</span>
+              </Link>
+            </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-8">
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex space-x-8">
             {navigation.map((item) => (
               <Link
                 key={item.name}
@@ -53,7 +54,8 @@ export function Header() {
                 {item.name}
               </Link>
             ))}
-          </nav>
+            </nav>
+          </div>
 
           {/* Account Button */}
           {user && (

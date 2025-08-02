@@ -293,7 +293,7 @@ export default function Microsites() {
                       />
                       
                       <MicrositePreviewModal
-                        micrositeUrl={microsite.url}
+                        micrositeUrl={`${window.location.origin}/m/${microsite.url || microsite.id}`}
                         micrositeName={microsite.name}
                         status={microsite.status as 'draft' | 'published'}
                         trigger={
