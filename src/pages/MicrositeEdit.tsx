@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Eye, Globe, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Globe, ExternalLink, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { MicrositeEditor } from '@/components/MicrositeEditor';
+import { DeleteMicrositeModal } from '@/components/DeleteMicrositeModal';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { nanoid } from 'nanoid';
@@ -237,6 +238,18 @@ export default function MicrositeEdit() {
                 View Live
               </Button>
             )}
+            
+            <DeleteMicrositeModal
+              micrositeId={microsite.id}
+              micrositeName={microsite.name}
+              onDelete={() => navigate('/microsites')}
+              trigger={
+                <Button variant="outline" size="sm" className="text-destructive hover:text-destructive border-destructive/20">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              }
+            />
           </div>
         </div>
         

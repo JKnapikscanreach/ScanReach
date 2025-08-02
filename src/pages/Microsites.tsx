@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Plus, ExternalLink, QrCode, Eye, Edit, ArrowUpDown, Filter } from 'lucide-react';
+import { Search, Plus, ExternalLink, QrCode, Eye, Edit, ArrowUpDown, Filter, Trash2 } from 'lucide-react';
 import { nanoid } from 'nanoid';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { QRCodeModal } from '@/components/QRCodeModal';
 import { MicrositePreviewModal } from '@/components/MicrositePreviewModal';
+import { DeleteMicrositeModal } from '@/components/DeleteMicrositeModal';
 import { useMicrosites } from '@/hooks/useMicrosites';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
@@ -309,6 +310,17 @@ export default function Microsites() {
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
+                      
+                      <DeleteMicrositeModal
+                        micrositeId={microsite.id}
+                        micrositeName={microsite.name}
+                        onDelete={() => refetch()}
+                        trigger={
+                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        }
+                      />
                     </div>
                   </TableCell>
                 </TableRow>

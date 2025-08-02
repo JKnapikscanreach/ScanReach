@@ -165,19 +165,18 @@ export default function Users() {
                 </Button>
               </TableHead>
               <TableHead># Sticker Orders</TableHead>
-              <TableHead>Subscription</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8">
+                <TableCell colSpan={7} className="text-center py-8">
                   Loading users...
                 </TableCell>
               </TableRow>
             ) : sortedUsers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8">
+                <TableCell colSpan={7} className="text-center py-8">
                   {searchTerm ? 'No users found matching your search.' : 'No users found.'}
                 </TableCell>
               </TableRow>
@@ -206,7 +205,6 @@ export default function Users() {
                   </TableCell>
                   <TableCell>{user.microsite_count || 0}</TableCell>
                   <TableCell>{user.sticker_order_count || 0}</TableCell>
-                  <TableCell>{getSubscriptionBadge(user.subscription_status)}</TableCell>
                 </TableRow>
               ))
             )}
