@@ -39,7 +39,7 @@ export function useUsers() {
         .from('users')
         .select(`
           *,
-          microsites!inner(count),
+          microsites(count),
           user_sessions(last_login)
         `);
 

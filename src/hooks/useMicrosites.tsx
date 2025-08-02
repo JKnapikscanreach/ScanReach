@@ -35,22 +35,37 @@ export const useMicrosites = () => {
         return;
       }
       
-      let query = supabase
+      // Fetch all microsites
+      const { data: micrositesData, error: micrositesError } = await supabase
         .from('microsites')
-        .select(`
-          *,
-          user:users(first_name, last_name, email)
-        `);
-      
-      // If not admin, only show user's own microsites
-      if (!isAdmin) {
-        query = query.eq('user_id', user.id);
-      }
-      
-      const { data, error } = await query.order('created_at', { ascending: false });
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setMicrosites(data || []);
+      if (micrositesError) throw micrositesError;
+
+      // Fetch users data separately
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select('id, first_name, last_name, email');
+
+      if (usersError) throw usersError;
+
+      // Combine the data
+      const combinedData = (micrositesData || []).map(microsite => {
+        const userData = usersData?.find(u => u.id === microsite.user_id);
+        return {
+          ...microsite,
+          user: userData || { first_name: '', last_name: '', email: '' }
+        };
+      });
+
+      // Filter by user if not admin
+      let filteredData = combinedData;
+      if (!isAdmin && user) {
+        filteredData = combinedData.filter(m => m.user_id === user.id);
+      }
+
+      setMicrosites(filteredData);
     } catch (error) {
       console.error('Error fetching microsites:', error);
       setError(error instanceof Error ? error.message : 'An error occurred');

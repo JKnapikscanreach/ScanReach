@@ -23,7 +23,6 @@ export function Header() {
   }
 
   const navigation = [
-    { name: 'QR Code Studio', href: '/' },
     { name: 'Microsites', href: '/microsites' },
     ...(isAdmin ? [{ name: 'Users', href: '/users' }] : []),
   ];

@@ -97,17 +97,23 @@ export const useMicrositeContent = (micrositeId: string) => {
         throw contentError;
       }
 
-      // Fetch cards with buttons
+      // Fetch cards with buttons separately
       const { data: cardsData, error: cardsError } = await supabase
         .from('microsite_cards')
-        .select(`
-          *,
-          buttons:microsite_buttons(*)
-        `)
+        .select('*')
         .eq('microsite_id', micrositeId)
         .order('sort_order');
 
       if (cardsError) throw cardsError;
+
+      // Fetch buttons separately
+      const { data: buttonsData, error: buttonsError } = await supabase
+        .from('microsite_buttons')
+        .select('*')
+        .in('card_id', (cardsData || []).map(card => card.id))
+        .order('sort_order');
+
+      if (buttonsError) throw buttonsError;
 
       // Create default content if none exists
       if (!contentData) {
@@ -138,15 +144,18 @@ export const useMicrositeContent = (micrositeId: string) => {
         });
       }
 
-      // Process cards data
-      const processedCards = (cardsData || []).map(card => ({
-        ...card,
-        title: (card as any).title || null,
-        buttons: (card.buttons || []).map(btn => ({
-          ...btn,
-          action_type: btn.action_type as 'tel' | 'mailto' | 'url'
-        })).sort((a, b) => a.sort_order - b.sort_order)
-      }));
+      // Process cards data with buttons
+      const processedCards = (cardsData || []).map(card => {
+        const cardButtons = (buttonsData || []).filter(btn => btn.card_id === card.id);
+        return {
+          ...card,
+          title: (card as any).title || null,
+          buttons: cardButtons.map(btn => ({
+            ...btn,
+            action_type: btn.action_type as 'tel' | 'mailto' | 'url'
+          })).sort((a, b) => a.sort_order - b.sort_order)
+        };
+      });
 
       setCards(processedCards);
     } catch (error) {

@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { DebugProvider, useDebug } from "@/contexts/DebugContext";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { DebugFloatingButton } from "@/components/DebugFloatingButton";
+
 import { Header } from "@/components/Header";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { createDebugSupabaseClient, debugFetch } from "@/utils/debugWrapper";
@@ -72,7 +72,7 @@ const App = () => {
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/" element={
                     <ProtectedRoute>
-                      <Index />
+                      <Microsites />
                     </ProtectedRoute>
                   } />
                   <Route path="/users" element={
@@ -105,7 +105,7 @@ const App = () => {
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>
-              <DebugFloatingButton />
+              
             </BrowserRouter>
           </TooltipProvider>
         </DebugInitializer>
