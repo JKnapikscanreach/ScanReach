@@ -1,5 +1,5 @@
 import { Eye } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
 interface MicrositePreviewModalProps {
@@ -42,15 +42,22 @@ export function MicrositePreviewModal({
               </Button>
             )}
           </DialogTitle>
+          <DialogDescription>
+            {status === 'published' 
+              ? 'Live preview of your published microsite'
+              : 'This microsite is in draft mode and cannot be previewed'
+            }
+          </DialogDescription>
         </DialogHeader>
         
         <div className="flex-1 border rounded-lg overflow-hidden">
           {status === 'published' && micrositeUrl ? (
             <iframe
               src={micrositeUrl}
-              className="w-full h-full"
+              className="w-full h-full border-0"
               title={`Preview of ${micrositeName}`}
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation"
+              loading="lazy"
             />
           ) : (
             <div className="flex items-center justify-center h-full bg-muted/20">
