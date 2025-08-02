@@ -24,7 +24,6 @@ export function Header() {
 
   const navigation = [
     { name: 'Microsites', href: '/microsites' },
-    ...(isAdmin ? [{ name: 'Users', href: '/users' }] : []),
   ];
 
   return (
@@ -67,6 +66,14 @@ export function Header() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  {isAdmin && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/users">
+                        <User className="h-4 w-4 mr-2" />
+                        All Users
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={signOut}>
                     <LogOut className="h-4 w-4 mr-2" />
                     Sign Out

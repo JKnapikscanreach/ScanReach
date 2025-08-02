@@ -37,13 +37,16 @@ export function useUsers() {
       // Fetch users with microsite counts and last login
       const { data: usersData, error: usersError } = await supabase
         .from('users')
-        .select(`
-          *,
-          microsites(count),
-          user_sessions(last_login)
-        `);
+        .select('*');
 
       if (usersError) throw usersError;
+
+      // Get microsite counts for each user
+      const { data: micrositesData, error: micrositesError } = await supabase
+        .from('microsites')
+        .select('user_id');
+
+      if (micrositesError) throw micrositesError;
 
       // Count sticker orders from existing orders table
       const { data: ordersData, error: ordersError } = await supabase
@@ -52,18 +55,29 @@ export function useUsers() {
 
       if (ordersError) throw ordersError;
 
+      // Get latest login for each user
+      const { data: sessionsData, error: sessionsError } = await supabase
+        .from('user_sessions')
+        .select('user_id, last_login')
+        .order('last_login', { ascending: false });
+
+      if (sessionsError) throw sessionsError;
+
       // Process and combine data
       const processedUsers = usersData?.map(user => {
         const stickerOrderCount = ordersData?.filter(order => 
           order.customer_id === user.id
         ).length || 0;
 
-        const lastLogin = user.user_sessions?.[0]?.last_login;
+        const micrositeCount = micrositesData?.filter(m => m.user_id === user.id).length || 0;
+        
+        const userSession = sessionsData?.find(s => s.user_id === user.id);
+        const lastLogin = userSession?.last_login;
         
         return {
           ...user,
           last_login: lastLogin,
-          microsite_count: user.microsites?.length || 0,
+          microsite_count: micrositeCount,
           sticker_order_count: stickerOrderCount,
         };
       }) || [];

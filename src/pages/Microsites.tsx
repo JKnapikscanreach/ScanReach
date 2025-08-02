@@ -283,7 +283,7 @@ export default function Microsites() {
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <div className="flex space-x-1">
                       <QRCodeModal 
-                        micrositeUrl={microsite.url || `https://example.com/m/${microsite.id}`}
+                        micrositeUrl={`${window.location.origin}/m/${microsite.url || microsite.id}`}
                         micrositeName={microsite.name}
                         trigger={
                           <Button variant="ghost" size="sm">
