@@ -5,13 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Loader2, Mail } from 'lucide-react';
 
 export const Auth = () => {
   const { user, signInWithEmail, signUpWithEmail, signInAsAdmin } = useAuth();
   const { toast } = useToast();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -84,12 +85,13 @@ export const Auth = () => {
             variant: "destructive",
           });
         } else {
-          console.log('🔧 Admin signin successful, setting emailSent to true');
-          setEmailSent(true);
+          console.log('🔧 Admin signin successful, redirecting to /microsites');
           toast({
             title: "Admin Bypass Activated!",
-            description: "Check your email for the magic link (admin@metaneer.com).",
+            description: "Redirecting to microsites...",
           });
+          // Redirect immediately to microsites for admin test
+          navigate('/microsites', { replace: true });
         }
       } catch (error) {
         console.error('🔧 Admin bypass exception:', error);
