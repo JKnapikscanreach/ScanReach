@@ -190,7 +190,7 @@ export const Auth = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
