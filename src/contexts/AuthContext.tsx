@@ -8,6 +8,7 @@ interface AuthContextType {
   loading: boolean;
   signInWithEmail: (email: string) => Promise<{ error: any }>;
   signUpWithEmail: (email: string, firstName: string, lastName: string, companyName?: string) => Promise<{ error: any }>;
+  signInAsAdmin: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
 }
@@ -105,6 +106,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
+  const signInAsAdmin = async () => {
+    // Development-only admin bypass
+    if (process.env.NODE_ENV === 'production') {
+      console.warn('Admin bypass attempted in production - blocked');
+      return { error: { message: 'Admin bypass not available in production' } };
+    }
+
+    console.log('🔧 Admin test bypass activated');
+    
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: 'admin@metaneer.com',
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+      
+      return { error };
+    } catch (error) {
+      console.error('Admin bypass error:', error);
+      return { error };
+    }
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setIsAdmin(false);
@@ -116,6 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     signInWithEmail,
     signUpWithEmail,
+    signInAsAdmin,
     signOut,
     isAdmin
   };

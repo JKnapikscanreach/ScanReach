@@ -9,7 +9,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { Loader2, Mail } from 'lucide-react';
 
 export const Auth = () => {
-  const { user, signInWithEmail, signUpWithEmail } = useAuth();
+  const { user, signInWithEmail, signUpWithEmail, signInAsAdmin } = useAuth();
   const { toast } = useToast();
   const location = useLocation();
   const [isSignUp, setIsSignUp] = useState(false);
@@ -63,6 +63,36 @@ export const Auth = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Admin test bypass
+    if (email.toLowerCase() === 'admintest') {
+      setLoading(true);
+      try {
+        const result = await signInAsAdmin();
+        if (result.error) {
+          toast({
+            title: "Admin Bypass Error",
+            description: result.error.message,
+            variant: "destructive",
+          });
+        } else {
+          setEmailSent(true);
+          toast({
+            title: "Admin Bypass Activated!",
+            description: "Check your email for the magic link (admin@metaneer.com).",
+          });
+        }
+      } catch (error) {
+        toast({
+          title: "Admin bypass failed",
+          description: "Please try again later.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
     
     if (!validateForm()) return;
 
