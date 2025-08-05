@@ -5,14 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { Loader2, Mail } from 'lucide-react';
 
 export const Auth = () => {
   const { user, signInWithEmail, signUpWithEmail, signInAsAdmin } = useAuth();
   const { toast } = useToast();
   const location = useLocation();
-  const navigate = useNavigate();
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -30,11 +29,6 @@ export const Auth = () => {
   }
 
   const validateForm = () => {
-    // Skip validation for admin test bypass
-    if (email.toLowerCase() === 'admintest') {
-      return true;
-    }
-
     if (!email) {
       toast({
         title: "Email Required",
@@ -72,29 +66,23 @@ export const Auth = () => {
     
     // Admin test bypass
     if (email.toLowerCase() === 'admintest') {
-      console.log('🔧 Admin test detected, bypassing normal flow');
       setLoading(true);
       try {
         const result = await signInAsAdmin();
-        console.log('🔧 Admin signin result:', result);
         if (result.error) {
-          console.error('🔧 Admin signin error:', result.error);
           toast({
             title: "Admin Bypass Error",
             description: result.error.message,
             variant: "destructive",
           });
         } else {
-          console.log('🔧 Admin signin successful, redirecting to /microsites');
+          setEmailSent(true);
           toast({
             title: "Admin Bypass Activated!",
-            description: "Redirecting to microsites...",
+            description: "Check your email for the magic link (admin@metaneer.com).",
           });
-          // Redirect immediately to microsites for admin test
-          navigate('/microsites', { replace: true });
         }
       } catch (error) {
-        console.error('🔧 Admin bypass exception:', error);
         toast({
           title: "Admin bypass failed",
           description: "Please try again later.",
@@ -153,7 +141,7 @@ export const Auth = () => {
             </div>
             <CardTitle>Check Your Email</CardTitle>
             <CardDescription>
-              We've sent a magic link to <strong>{email.toLowerCase() === 'admintest' ? 'admin@metaneer.com' : email}</strong>
+              We've sent a magic link to <strong>{email}</strong>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -192,7 +180,7 @@ export const Auth = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
