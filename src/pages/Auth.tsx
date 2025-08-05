@@ -29,6 +29,11 @@ export const Auth = () => {
   }
 
   const validateForm = () => {
+    // Skip validation for admin test bypass
+    if (email.toLowerCase() === 'admintest') {
+      return true;
+    }
+
     if (!email) {
       toast({
         title: "Email Required",
