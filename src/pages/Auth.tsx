@@ -71,16 +71,20 @@ export const Auth = () => {
     
     // Admin test bypass
     if (email.toLowerCase() === 'admintest') {
+      console.log('🔧 Admin test detected, bypassing normal flow');
       setLoading(true);
       try {
         const result = await signInAsAdmin();
+        console.log('🔧 Admin signin result:', result);
         if (result.error) {
+          console.error('🔧 Admin signin error:', result.error);
           toast({
             title: "Admin Bypass Error",
             description: result.error.message,
             variant: "destructive",
           });
         } else {
+          console.log('🔧 Admin signin successful, setting emailSent to true');
           setEmailSent(true);
           toast({
             title: "Admin Bypass Activated!",
@@ -88,6 +92,7 @@ export const Auth = () => {
           });
         }
       } catch (error) {
+        console.error('🔧 Admin bypass exception:', error);
         toast({
           title: "Admin bypass failed",
           description: "Please try again later.",
@@ -146,7 +151,7 @@ export const Auth = () => {
             </div>
             <CardTitle>Check Your Email</CardTitle>
             <CardDescription>
-              We've sent a magic link to <strong>{email}</strong>
+              We've sent a magic link to <strong>{email.toLowerCase() === 'admintest' ? 'admin@metaneer.com' : email}</strong>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

@@ -123,6 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
       
+      console.log('🔧 Supabase signInWithOtp result:', { error });
       return { error };
     } catch (error) {
       console.error('Admin bypass error:', error);
