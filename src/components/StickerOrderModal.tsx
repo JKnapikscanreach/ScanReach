@@ -4,17 +4,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useDebug } from '@/contexts/DebugContext';
 import { createDebugClient } from '@/integrations/supabase/debugClient';
-import { Loader2, Package, Truck, AlertCircle } from 'lucide-react';
+import { Loader2, Package, Truck, AlertCircle, ShoppingCart } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { cartService } from '@/services/cartService';
+import { useCart } from '@/hooks/useCart';
 
 interface StickerOrderModalProps {
   isOpen: boolean;
   onClose: () => void;
   qrDataUrl: string;
+  micrositeId?: string;
 }
 
 interface ProductVariant {
@@ -71,11 +74,14 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
   isOpen,
   onClose,
   qrDataUrl,
+  micrositeId,
 }) => {
   const { toast } = useToast();
   const { addEntry } = useDebug();
+  const { refreshCartCount } = useCart();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [addingToCart, setAddingToCart] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<number | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
@@ -258,6 +264,65 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
   };
 
   const totalPrice = calculatePrice() * quantity;
+
+  const handleAddToCart = async () => {
+    if (!selectedProduct || !selectedVariant) {
+      toast({
+        title: "Selection required",
+        description: "Please select a product and variant before adding to cart",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!micrositeId) {
+      toast({
+        title: "Microsite required",
+        description: "Cannot add to cart without microsite context",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setAddingToCart(true);
+      
+      await cartService.addToCart({
+        micrositeId,
+        productId: selectedProduct.toString(),
+        variantId: selectedVariant.id.toString(),
+        quantity,
+        size: selectedVariant.size,
+        material: selectedVariant.color,
+        unitPrice: calculatePrice(),
+        currency: 'USD',
+        qrDataUrl,
+        productName: currentProduct?.title || 'Custom Sticker',
+        variantName: selectedVariant.name,
+        productImageUrl: selectedVariant.image || currentProduct?.image,
+      });
+
+      toast({
+        title: "Added to cart!",
+        description: `${quantity} item(s) added to your cart`,
+      });
+
+      // Refresh cart count in header
+      await refreshCartCount();
+
+      // Reset selection but keep modal open
+      setQuantity(1);
+      
+    } catch (error) {
+      toast({
+        title: "Failed to add to cart",
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setAddingToCart(false);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -475,25 +540,46 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button 
-              type="submit" 
-              disabled={uploading || loading}
-              className="min-w-32"
-            >
-              {uploading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Uploading...
-                </>
-              ) : loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating Order...
-                </>
-              ) : (
-                `Place Order - $${totalPrice.toFixed(2)}`
-              )}
-            </Button>
+            <div className="flex gap-3">
+              <Button 
+                type="button"
+                variant="outline"
+                onClick={handleAddToCart}
+                disabled={uploading || loading || addingToCart || !selectedProduct || !selectedVariant || !micrositeId}
+                className="min-w-32"
+              >
+                {addingToCart ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    Add to Cart
+                  </>
+                )}
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={uploading || loading || addingToCart}
+                className="min-w-32"
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating Order...
+                  </>
+                ) : (
+                  `Place Order - $${totalPrice.toFixed(2)}`
+                )}
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>

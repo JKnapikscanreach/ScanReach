@@ -18,6 +18,7 @@ import MicrositeEdit from "./pages/MicrositeEdit";
 import PublicMicrosite from "./pages/PublicMicrosite";
 import NotFound from "./pages/NotFound";
 import { Auth } from "./pages/Auth";
+import { CartPage } from "@/components/CartPage";
 
 const queryClient = new QueryClient();
 
@@ -97,6 +98,11 @@ const App = () => {
                   <Route path="/microsites/new" element={
                     <ProtectedRoute>
                       <MicrositeEdit />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/cart" element={
+                    <ProtectedRoute>
+                      <CartPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/m/:micrositeUrl" element={<PublicMicrosite />} />

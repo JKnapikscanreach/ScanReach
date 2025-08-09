@@ -14,6 +14,107 @@ export type Database = {
   }
   public: {
     Tables: {
+      cart_line_items: {
+        Row: {
+          cart_id: string
+          created_at: string
+          currency: string
+          id: string
+          material: string
+          microsite_id: string
+          product_id: string
+          product_image_url: string | null
+          product_name: string
+          qr_data_url: string
+          quantity: number
+          size: string
+          unit_price: number
+          updated_at: string
+          variant_id: string
+          variant_name: string
+        }
+        Insert: {
+          cart_id: string
+          created_at?: string
+          currency?: string
+          id?: string
+          material: string
+          microsite_id: string
+          product_id: string
+          product_image_url?: string | null
+          product_name: string
+          qr_data_url: string
+          quantity?: number
+          size: string
+          unit_price: number
+          updated_at?: string
+          variant_id: string
+          variant_name: string
+        }
+        Update: {
+          cart_id?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          material?: string
+          microsite_id?: string
+          product_id?: string
+          product_image_url?: string | null
+          product_name?: string
+          qr_data_url?: string
+          quantity?: number
+          size?: string
+          unit_price?: number
+          updated_at?: string
+          variant_id?: string
+          variant_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cart_line_items_cart_id_fkey"
+            columns: ["cart_id"]
+            isOneToOne: false
+            referencedRelation: "carts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cart_line_items_microsite_id_fkey"
+            columns: ["microsite_id"]
+            isOneToOne: false
+            referencedRelation: "microsites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      carts: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           created_at: string

@@ -305,7 +305,8 @@ export const MicrositeQRSection: React.FC<MicrositeQRSectionProps> = ({ microsit
         <StickerOrderModal 
           isOpen={isOrderModalOpen} 
           onClose={() => setIsOrderModalOpen(false)} 
-          qrDataUrl={qrDataUrl} 
+          qrDataUrl={qrDataUrl}
+          micrositeId={micrositeId}
         />
 
         <OrderHistoryModal 

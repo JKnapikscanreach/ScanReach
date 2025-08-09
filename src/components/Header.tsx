@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { User, Menu, X, LogOut } from 'lucide-react';
+import { User, Menu, X, LogOut, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,12 +10,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useCart } from '@/hooks/useCart';
 // Logo will use direct URL reference
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const { user, signOut, isAdmin } = useAuth();
+  const { itemCount } = useCart();
 
   // Don't show header on auth page or public microsite pages
   if (location.pathname === '/auth' || location.pathname.startsWith('/m/')) {
@@ -57,25 +59,38 @@ export function Header() {
             </nav>
           </div>
 
-          {/* Account Button */}
+          {/* User menu */}
           {user && (
-            <div className="hidden md:flex">
+            <div className="flex items-center space-x-4">
+              {/* Cart Icon */}
+              <Link to="/cart">
+                <Button variant="ghost" size="sm" className="relative">
+                  <ShoppingCart className="h-4 w-4" />
+                  {itemCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {itemCount > 99 ? '99+' : itemCount}
+                    </span>
+                  )}
+                  <span className="hidden sm:inline ml-2">Cart</span>
+                </Button>
+              </Link>
+
+              {isAdmin && (
+                <Link to="/users">
+                  <Button variant="ghost" size="sm">
+                    Users
+                  </Button>
+                </Link>
+              )}
+              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">
-                    <User className="h-4 w-4 mr-2" />
-                    {user.email}
+                  <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+                    <User className="h-4 w-4" />
+                    <span className="hidden sm:inline">{user.email}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {isAdmin && (
-                    <DropdownMenuItem asChild>
-                      <Link to="/users">
-                        <User className="h-4 w-4 mr-2" />
-                        All Users
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
                   <DropdownMenuItem onClick={signOut}>
                     <LogOut className="h-4 w-4 mr-2" />
                     Sign Out
