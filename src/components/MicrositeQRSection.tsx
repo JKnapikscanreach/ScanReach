@@ -11,7 +11,7 @@ import { StickerOrderModal } from './StickerOrderModal';
 import { OrderHistoryModal } from './OrderHistoryModal';
 import { ColorPicker } from '@/components/ui/color-picker';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { createClient } from '@/utils/supabase/client';
 
 interface MicrositeQRSectionProps {
   micrositeId: string;
@@ -33,6 +33,7 @@ export const MicrositeQRSection: React.FC<MicrositeQRSectionProps> = ({ microsit
   useEffect(() => {
     const fetchMicrositeUrl = async () => {
       try {
+        const supabase = createClient();
         const { data, error } = await supabase
           .from('microsites')
           .select('url')
@@ -237,7 +238,7 @@ export const MicrositeQRSection: React.FC<MicrositeQRSectionProps> = ({ microsit
                   <div className="space-y-2">
                     <img src={logoDataUrl} alt="Logo preview" className="w-6 h-6 mx-auto object-contain" />
                     <p className="text-xs text-muted-foreground">
-                      {logoFile?.name?.length > 20 ? logoFile?.name.substring(0, 20) + '...' : logoFile?.name}
+                      {!!logoFile?.name?.length && logoFile?.name?.length > 20 ? logoFile?.name.substring(0, 20) + '...' : logoFile?.name}
                     </p>
                   </div>
                 ) : (

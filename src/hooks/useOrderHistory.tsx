@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { createClient } from '@/utils/supabase/client';
 
 interface Order {
   id: string;
@@ -39,6 +39,7 @@ export const useOrderHistory = (customerEmail?: string) => {
       setLoading(true);
       setError(null);
 
+      const supabase = createClient();
       const { data, error: queryError } = await supabase
         .from('orders')
         .select(`
@@ -55,7 +56,10 @@ export const useOrderHistory = (customerEmail?: string) => {
         return;
       }
 
-      setOrders(data || []);
+      setOrders((data || []).map(order => ({
+        ...order,
+        printful_order_id: order.printful_order_id || '',
+      })));
     } catch (err) {
       console.error('Error in fetchOrders:', err);
       setError('Failed to fetch order history');
@@ -66,6 +70,7 @@ export const useOrderHistory = (customerEmail?: string) => {
 
   const getOrderStatus = async (orderId: string) => {
     try {
+      const supabase = createClient();
       const { data, error } = await supabase.functions.invoke('printful-order-status', {
         body: { orderId }
       });

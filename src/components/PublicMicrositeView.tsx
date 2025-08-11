@@ -1,10 +1,12 @@
+'use client'
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Phone, Mail, ExternalLink } from 'lucide-react';
 import { MicrositeContent, MicrositeCard } from '@/hooks/useMicrositeContent';
 
 interface PublicMicrositeViewProps {
-  content: MicrositeContent;
+  content: MicrositeContent | null;
   cards: MicrositeCard[];
   title: string;
 }
@@ -63,6 +65,19 @@ export const PublicMicrositeView: React.FC<PublicMicrositeViewProps> = React.mem
       />
     );
   };
+
+  if (!content) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Microsite Not Found</h1>
+          <p className="text-muted-foreground">
+            This microsite doesn't exist or is not published.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div 

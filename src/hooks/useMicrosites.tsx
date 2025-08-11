@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { createClient } from '@/utils/supabase/client';
+import { User } from '@supabase/supabase-js';
 
 interface Microsite {
   id: string;
   name: string;
-  url?: string;
+  url?: string | null;
   status: string;
   scan_count: number;
-  last_scan_at?: string;
+  last_scan_at?: string | null;
   created_at: string;
   updated_at: string;
+  user_id?: string;
   user: {
     first_name: string;
     last_name: string;
@@ -22,7 +23,39 @@ export const useMicrosites = () => {
   const [microsites, setMicrosites] = useState<Microsite[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user, isAdmin } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Initialize Supabase client and get user
+  useEffect(() => {
+    const supabase = createClient();
+    
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      
+      // Check if user is admin (you may need to adjust this logic based on your user roles)
+      if (user) {
+        const isUserAdmin = user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin';
+        setIsAdmin(isUserAdmin);
+      }
+    };
+
+    getUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        const isUserAdmin = session.user.user_metadata?.role === 'admin' || session.user.app_metadata?.role === 'admin';
+        setIsAdmin(isUserAdmin);
+      } else {
+        setIsAdmin(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const fetchMicrosites = async () => {
     try {
@@ -34,6 +67,8 @@ export const useMicrosites = () => {
         setLoading(false);
         return;
       }
+
+      const supabase = createClient();
       
       // Fetch all microsites
       const { data: micrositesData, error: micrositesError } = await supabase
@@ -76,6 +111,7 @@ export const useMicrosites = () => {
 
   const updateMicrosite = async (id: string, updates: Partial<Microsite>) => {
     try {
+      const supabase = createClient();
       const { error } = await supabase
         .from('microsites')
         .update(updates)
@@ -91,6 +127,7 @@ export const useMicrosites = () => {
 
   const deleteMicrosite = async (id: string) => {
     try {
+      const supabase = createClient();
       const { error } = await supabase
         .from('microsites')
         .delete()
@@ -106,6 +143,7 @@ export const useMicrosites = () => {
 
   const trackScan = async (micrositeId: string, userAgent?: string, ipAddress?: string) => {
     try {
+      const supabase = createClient();
       const { error } = await supabase
         .from('microsite_scans')
         .insert({

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { createClient } from '@/utils/supabase/client';
+import { useRouter } from 'next/navigation';
 
 export interface User {
   id: string;
@@ -21,7 +21,29 @@ export function useUsers() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user: currentUser, isAdmin } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const supabase = createClient();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_, session) => {
+        if (!session?.user) {
+          // Redirect to login page
+          router.push('/login');
+          return;
+        }
+
+        setCurrentUser(session?.user as unknown as User);
+        setIsAdmin(session?.user?.user_metadata?.role === 'admin');
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const fetchUsers = async () => {
     try {
@@ -33,6 +55,8 @@ export function useUsers() {
         setLoading(false);
         return;
       }
+
+      const supabase = createClient();
       
       // Fetch users with microsite counts and last login
       const { data: usersData, error: usersError } = await supabase
@@ -82,7 +106,7 @@ export function useUsers() {
         };
       }) || [];
 
-      setUsers(processedUsers);
+      setUsers(processedUsers as User[]);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch users');
@@ -93,6 +117,7 @@ export function useUsers() {
 
   const updateUser = async (userId: string, updates: Partial<User>) => {
     try {
+      const supabase = createClient();
       const { error } = await supabase
         .from('users')
         .update(updates)
@@ -112,6 +137,7 @@ export function useUsers() {
 
   const deleteUser = async (userId: string) => {
     try {
+      const supabase = createClient();
       const { error } = await supabase
         .from('users')
         .delete()

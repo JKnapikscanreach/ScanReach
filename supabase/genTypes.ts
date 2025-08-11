@@ -18,7 +18,7 @@ if (!supabaseUrl) {
 try {
     const supabaseIdFromUrl = supabaseUrl.replace('https://', '').split('.')[0];
     const thisPath = resolve();
-    execSync(`npx supabase gen types typescript --project-id ${supabaseIdFromUrl} > ${thisPath}/src/integrations/supabase/types.ts`, { stdio: 'inherit' });
+    execSync(`npx supabase gen types typescript --project-id ${supabaseIdFromUrl} > ${thisPath}/src/utils/supabase/types.ts`, { stdio: 'inherit' });
 } catch (error) {
     console.error('Failed to execute the npx script:', error);
     process.exit(1);
