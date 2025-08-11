@@ -211,7 +211,7 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
             </div>
 
             <DragDropContext onDragEnd={handleDragEnd}>
-              <Droppable droppableId="cards">
+              <Droppable droppableId="cards" isDropDisabled={false} isCombineEnabled ignoreContainerClipping={false}>
                 {(provided) => (
                   <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-3">
                     {cards.map((card, index) => (
