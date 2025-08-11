@@ -65,7 +65,10 @@ export const useMicrositeContent = (micrositeId: string) => {
   // Smart auto-save for content
   const { queueUpdate: queueContentUpdate, isSaving: isContentSaving } = useSmartAutoSave<MicrositeContent>(
     async (updates) => {
-      if (!content) return;
+      if (!content) {
+        return;
+      }
+
       const supabase = createClient();
       const { data, error } = await supabase
         .from('microsite_content')
@@ -74,7 +77,10 @@ export const useMicrositeContent = (micrositeId: string) => {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
+
       setContent({
         ...data,
         theme_config: parseThemeConfig(data.theme_config)
@@ -118,11 +124,11 @@ export const useMicrositeContent = (micrositeId: string) => {
 
       if (buttonsError) throw buttonsError;
 
-      // Create default content if none exists
+      // Create or get default content using upsert to prevent duplicates
       if (!contentData) {
         const { data: newContent, error: createError } = await supabase
           .from('microsite_content')
-          .insert({
+          .upsert({
             microsite_id: micrositeId,
             title: null,
             header_image_url: null,
@@ -131,6 +137,8 @@ export const useMicrositeContent = (micrositeId: string) => {
               text: '#1a1a1a',
               background: '#ffffff'
             }
+          }, {
+            onConflict: 'microsite_id'
           })
           .select()
           .single();

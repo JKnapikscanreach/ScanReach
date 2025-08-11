@@ -137,8 +137,11 @@ export default function MicrositeEdit() {
   };
 
   const getPublicUrl = () => {
-    if (!microsite?.url) return '';
-    return `${window.location.origin}/m/${microsite.url}`;
+    if (!microsite?.url) {
+      return '';
+    }
+
+    return microsite.url;
   };
 
 

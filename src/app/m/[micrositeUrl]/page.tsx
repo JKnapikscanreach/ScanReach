@@ -49,6 +49,7 @@ async function getMicrositeData(micrositeUrl: string): Promise<{
     .single();
 
   if (micrositeError) {
+    console.error('Error fetching microsite:', micrositeError);
     return null;
   }
 
@@ -109,7 +110,6 @@ async function getMicrositeData(micrositeUrl: string): Promise<{
 
 export default async function PublicMicrosite({ params }: PageProps) {
   const { micrositeUrl } = await params;
-  
   const data = await getMicrositeData(micrositeUrl);
   
   if (!data) {
