@@ -1,12 +1,13 @@
+'use client'
+
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { Search, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { useUsers, type User } from '@/hooks/useUsers';
-import { cn } from '@/lib/utils';
+import { useUsers } from '@/hooks/useUsers';
+import Link from 'next/link';
 
 type SortField = 'created_at' | 'last_login' | 'microsite_count' | 'first_name';
 type SortDirection = 'asc' | 'desc';
@@ -188,7 +189,7 @@ export default function Users() {
                 >
                   <TableCell>
                     <Link
-                      to={`/users/${user.id}`}
+                      href={`/users/${user.id}`}
                       className="font-medium hover:text-primary"
                     >
                       {user.first_name} {user.last_name}

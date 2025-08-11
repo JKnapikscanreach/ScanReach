@@ -12,7 +12,8 @@ import { HeaderImageUpload } from './HeaderImageUpload';
 import { MicrositeQRSection } from './MicrositeQRSection';
 import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/useDebounce';
-import { supabase } from '@/utils/supabase/client';
+import { GripVertical, Plus, Trash2 } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
 
 interface MicrositeEditorProps {
   micrositeId: string;
@@ -46,7 +47,7 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
   
   const { toast } = useToast();
   const [title, setTitle] = useState<string>('');
-  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const [_expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   
   // Debounced title update
   const debouncedTitle = useDebounce(title, 500);
@@ -69,6 +70,7 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
 
   const updateMicrositeName = useCallback(async (name: string) => {
     try {
+      const supabase = createClient();
       const { error } = await supabase
         .from('microsites')
         .update({ name })
@@ -85,6 +87,7 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
     setTitle(value);
   }, []);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleDragEnd = useCallback((result: any) => {
     if (!result.destination) return;
 
@@ -123,25 +126,25 @@ export const MicrositeEditor: React.FC<MicrositeEditorProps> = ({
     onAutoSavingChange?.(autoSaving);
   }, [autoSaving, onAutoSavingChange]);
 
-  const handleSave = useCallback(() => {
-    toast({
-      title: "Saved",
-      description: "Your microsite has been saved.",
-    });
-    onSave?.();
-  }, [onSave, toast]);
+  // const _handleSave = useCallback(() => {
+  //   toast({
+  //     title: "Saved",
+  //     description: "Your microsite has been saved.",
+  //   });
+  //   onSave?.();
+  // }, [onSave, toast]);
 
-  const handlePublish = useCallback(() => {
-    if (!content?.title) {
-      toast({
-        title: "Cannot publish",
-        description: "Please add a title to your microsite before publishing.",
-        variant: "destructive",
-      });
-      return;
-    }
-    onPublish?.();
-  }, [content?.title, onPublish, toast]);
+  // const handlePublish = useCallback(() => {
+  //   if (!content?.title) {
+  //     toast({
+  //       title: "Cannot publish",
+  //       description: "Please add a title to your microsite before publishing.",
+  //       variant: "destructive",
+  //     });
+  //     return;
+  //   }
+  //   onPublish?.();
+  // }, [content?.title, onPublish, toast]);
 
   if (loading) {
     return (

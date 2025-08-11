@@ -1,7 +1,9 @@
+"use client";
+
 import { useState } from 'react';
-import { Search, Plus, ExternalLink, QrCode, Eye, Edit, ArrowUpDown, Filter, Trash2 } from 'lucide-react';
+import { Search, Plus, QrCode, Eye, Edit, ArrowUpDown, Filter, Trash2 } from 'lucide-react';
 import { nanoid } from 'nanoid';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -12,17 +14,15 @@ import { MicrositePreviewModal } from '@/components/MicrositePreviewModal';
 import { DeleteMicrositeModal } from '@/components/DeleteMicrositeModal';
 import { useMicrosites } from '@/hooks/useMicrosites';
 import { Skeleton } from '@/components/ui/skeleton';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useAuth } from '@/contexts/AuthContext';
+import { createClient } from '@/utils/supabase/client';
 
 type SortField = 'name' | 'created_at' | 'scan_count' | 'status';
 type SortDirection = 'asc' | 'desc';
 type StatusFilter = 'all' | 'draft' | 'published';
 
 export default function Microsites() {
-  const navigate = useNavigate();
-  const { user } = useAuth();
+  const router = useRouter();
   const { microsites, loading, error, refetch } = useMicrosites();
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -42,10 +42,13 @@ export default function Microsites() {
   };
 
   const handleRowClick = (micrositeId: string) => {
-    navigate(`/microsites/${micrositeId}/edit`);
+    router.push(`/microsites/${micrositeId}/edit`);
   };
 
   const handleCreateMicrosite = async () => {
+    const client = createClient();
+    const { data: { user } } = await client.auth.getUser();
+    
     if (!user) {
       toast.error('You must be logged in to create a microsite');
       return;
@@ -55,7 +58,7 @@ export default function Microsites() {
       const micrositeUrl = `microsite-${nanoid(8)}`;
       
       // Create a new microsite with actual user ID (let DB auto-generate UUID)
-      const { data, error } = await supabase
+      const { data: newMicrositeData, error } = await client
         .from('microsites')
         .insert({
           name: `New Microsite ${Date.now()}`,
@@ -71,7 +74,7 @@ export default function Microsites() {
 
       toast.success('Microsite created successfully');
       refetch(); // Refresh the list
-      navigate(`/microsites/${data.id}/edit`);
+      router.push(`/microsites/${newMicrositeData.id}/edit`);
     } catch (error) {
       console.error('Error creating microsite:', error);
       toast.error('Failed to create microsite');
@@ -89,8 +92,8 @@ export default function Microsites() {
       return matchesSearch && matchesStatus;
     })
     .sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
+      let aValue: string | Date | number;
+      let bValue: string | Date | number;
       
       switch (sortField) {
         case 'name':

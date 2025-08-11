@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SketchPicker } from "react-color";
 import { Pipette } from "lucide-react";
@@ -19,8 +18,7 @@ export function ColorPicker({ label, value, onChange, showEyedropper = true }: C
   const handleEyedropper = async () => {
     if ('EyeDropper' in window) {
       try {
-        // @ts-ignore - EyeDropper is not in TypeScript types yet
-        const eyeDropper = new window.EyeDropper();
+        const eyeDropper = new (window as any).EyeDropper();
         const result = await eyeDropper.open();
         onChange(result.sRGBHex);
       } catch (err) {

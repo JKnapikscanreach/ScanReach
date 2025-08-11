@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/utils/supabase/client';
+import { createClient } from '@/utils/supabase/client';
 import { useSmartAutoSave } from './useSmartAutoSave';
 
 export interface MicrositeContent {
@@ -66,6 +66,7 @@ export const useMicrositeContent = (micrositeId: string) => {
   const { queueUpdate: queueContentUpdate, isSaving: isContentSaving } = useSmartAutoSave<MicrositeContent>(
     async (updates) => {
       if (!content) return;
+      const supabase = createClient();
       const { data, error } = await supabase
         .from('microsite_content')
         .update(updates)
@@ -85,6 +86,8 @@ export const useMicrositeContent = (micrositeId: string) => {
     try {
       setLoading(true);
       setError(null);
+
+      const supabase = createClient();
 
       // Fetch microsite content
       const { data: contentData, error: contentError } = await supabase
@@ -180,6 +183,7 @@ export const useMicrositeContent = (micrositeId: string) => {
 
   const addCard = async () => {
     try {
+      const supabase = createClient();
       const maxSortOrder = Math.max(...cards.map(c => c.sort_order), -1);
         const { data, error } = await supabase
           .from('microsite_cards')
@@ -210,6 +214,7 @@ export const useMicrositeContent = (micrositeId: string) => {
 
     // Save to database with debounced batching
     try {
+      const supabase = createClient();
       const { data, error } = await supabase
         .from('microsite_cards')
         .update(updates)
@@ -226,6 +231,7 @@ export const useMicrositeContent = (micrositeId: string) => {
 
   const deleteCard = async (cardId: string) => {
     try {
+      const supabase = createClient();
       const { error } = await supabase
         .from('microsite_cards')
         .delete()
@@ -241,6 +247,7 @@ export const useMicrositeContent = (micrositeId: string) => {
 
   const reorderCards = async (reorderedCards: MicrositeCard[]) => {
     try {
+      const supabase = createClient();
       const updates = reorderedCards.map((card, index) => ({
         id: card.id,
         sort_order: index
@@ -262,6 +269,7 @@ export const useMicrositeContent = (micrositeId: string) => {
 
   const addButton = async (cardId: string, button: Omit<MicrositeButton, 'id' | 'created_at' | 'updated_at'>) => {
     try {
+      const supabase = createClient();
       const { data, error } = await supabase
         .from('microsite_buttons')
         .insert(button)
@@ -283,6 +291,7 @@ export const useMicrositeContent = (micrositeId: string) => {
 
   const updateButton = async (buttonId: string, updates: Partial<MicrositeButton>) => {
     try {
+      const supabase = createClient();
       const { data, error } = await supabase
         .from('microsite_buttons')
         .update(updates)
@@ -304,6 +313,7 @@ export const useMicrositeContent = (micrositeId: string) => {
 
   const deleteButton = async (buttonId: string) => {
     try {
+      const supabase = createClient();
       const { error } = await supabase
         .from('microsite_buttons')
         .delete()
@@ -333,6 +343,8 @@ export const useMicrositeContent = (micrositeId: string) => {
         id: button.id,
         sort_order: index
       }));
+
+      const supabase = createClient();
 
       for (const update of updates) {
         await supabase

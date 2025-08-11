@@ -3,8 +3,8 @@ import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { X, Image as ImageIcon, AlertCircle } from 'lucide-react';
-import { supabase } from '@/utils/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { createClient } from '@/utils/supabase/client';
 
 interface HeaderImageUploadProps {
   micrositeId: string;
@@ -51,8 +51,10 @@ export const HeaderImageUpload: React.FC<HeaderImageUploadProps> = ({
       const fileName = `header-${micrositeId}-${Date.now()}.${fileExtension}`;
       const filePath = `headers/${fileName}`;
 
+      const supabase = createClient();
+
       // Upload to Supabase Storage
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('microsite-assets')
         .upload(filePath, file, {
           cacheControl: '3600',
@@ -105,6 +107,7 @@ export const HeaderImageUpload: React.FC<HeaderImageUploadProps> = ({
     if (currentImageUrl) {
       try {
         // Extract file path from URL
+        const supabase = createClient();
         const url = new URL(currentImageUrl);
         const filePath = url.pathname.split('/storage/v1/object/public/microsite-assets/')[1];
         

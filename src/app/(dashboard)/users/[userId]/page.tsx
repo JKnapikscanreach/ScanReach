@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Edit, Save, X, Trash2, Shield, ShieldOff, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,14 +12,16 @@ import { useUsers, type User } from '@/hooks/useUsers';
 import { useOrderHistory } from '@/hooks/useOrderHistory';
 import { OrderHistoryModal } from '@/components/OrderHistoryModal';
 import { useToast } from '@/hooks/use-toast';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
 
-export default function UserDetail() {
+function UserDetailContent() {
+  const params = useParams();
+  const router = useRouter();
+  const userId = params.userId as string;
   const { toast } = useToast();
   const { users, updateUser, deleteUser } = useUsers();
-  const { orders, loading: ordersLoading } = useOrderHistory(''); // We'll filter by user
-  const router = useRouter();
+  const { orders } = useOrderHistory(''); // We'll filter by user
   
   const [user, setUser] = useState<User | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -30,7 +34,7 @@ export default function UserDetail() {
   const [showOrderModal, setShowOrderModal] = useState(false);
 
   useEffect(() => {
-    const foundUser = users.find(u => u.id === user?.id);
+    const foundUser = users.find(u => u.id === userId);
     if (foundUser) {
       setUser(foundUser);
       setEditForm({
@@ -40,7 +44,7 @@ export default function UserDetail() {
         company_name: foundUser.company_name || '',
       });
     }
-  }, [users, user?.id]);
+  }, [users, userId]);
 
   const handleSave = async () => {
     if (!user) return;
@@ -362,5 +366,11 @@ export default function UserDetail() {
         onClose={() => setShowOrderModal(false)}
       />
     </div>
+  );
+}
+
+export default function UserDetailPage() {
+  return (
+      <UserDetailContent />
   );
 }

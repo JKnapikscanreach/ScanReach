@@ -1,5 +1,7 @@
+"use client";
+
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Save, Eye, Globe, ExternalLink, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,8 +9,8 @@ import { Separator } from '@/components/ui/separator';
 import { MicrositeEditor } from '@/components/MicrositeEditor';
 import { DeleteMicrositeModal } from '@/components/DeleteMicrositeModal';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 import { nanoid } from 'nanoid';
+import { createClient } from '@/utils/supabase/client';
 
 interface MicrositeData {
   id: string;
@@ -22,8 +24,9 @@ interface MicrositeData {
 }
 
 export default function MicrositeEdit() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+  const params = useParams();
+  const router = useRouter();
+  const id = params?.id as string;
   const isNewMicrosite = !id || id === 'new';
   
   const [microsite, setMicrosite] = useState<MicrositeData | null>(null);
@@ -56,6 +59,8 @@ export default function MicrositeEdit() {
         updated_at: new Date().toISOString()
       };
 
+      const supabase = createClient();
+
       const { error } = await supabase
         .from('microsites')
         .insert(newMicrosite);
@@ -65,13 +70,13 @@ export default function MicrositeEdit() {
       setMicrosite(newMicrosite);
       
       // Update URL to reflect the new microsite ID
-      navigate(`/microsites/${micrositeId}/edit`, { replace: true });
+      router.replace(`/microsites/${micrositeId}/edit`);
       
       toast.success('New microsite created');
     } catch (error) {
       console.error('Error creating microsite:', error);
       toast.error('Failed to create microsite');
-      navigate('/microsites');
+      router.push('/microsites');
     }
   };
 
@@ -79,6 +84,7 @@ export default function MicrositeEdit() {
     if (!id) return;
     
     try {
+      const supabase = createClient();
       setLoading(true);
       const { data, error } = await supabase
         .from('microsites')
@@ -88,11 +94,14 @@ export default function MicrositeEdit() {
 
       if (error) throw error;
       
-      setMicrosite(data);
+      setMicrosite({
+        ...data,
+        url: data.url ? `${window.location.origin}/m/${data.url}` : undefined,
+      });
     } catch (error) {
       console.error('Error fetching microsite:', error);
       toast.error('Failed to load microsite');
-      navigate('/microsites');
+      router.push('/microsites');
     } finally {
       setLoading(false);
     }
@@ -103,8 +112,8 @@ export default function MicrositeEdit() {
     
     try {
       setIsPublishing(true);
-      const newStatus = microsite.status === 'published' ? 'draft' : 'published';
-      
+      const newStatus = microsite.status === 'published' ? 'draft' : 'published';      
+      const supabase = createClient();
       const { error } = await supabase
         .from('microsites')
         .update({ status: newStatus })
@@ -149,7 +158,7 @@ export default function MicrositeEdit() {
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Microsite Not Found</h1>
-          <Button onClick={() => navigate('/microsites')}>
+          <Button onClick={() => router.push('/microsites')}>
             Back to Microsites
           </Button>
         </div>
@@ -166,7 +175,7 @@ export default function MicrositeEdit() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate('/microsites')}
+              onClick={() => router.push('/microsites')}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Microsites
@@ -242,7 +251,7 @@ export default function MicrositeEdit() {
             <DeleteMicrositeModal
               micrositeId={microsite.id}
               micrositeName={microsite.name}
-              onDelete={() => navigate('/microsites')}
+              onDelete={() => router.push('/microsites')}
               trigger={
                 <Button variant="outline" size="sm" className="text-destructive hover:text-destructive border-destructive/20">
                   <Trash2 className="h-4 w-4 mr-2" />

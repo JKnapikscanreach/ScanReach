@@ -11,13 +11,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <Header />
-        <main className="min-h-screen">{children}</main>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <>
+      <Header />
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <main className="min-h-screen">{children}</main>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </>
   );
 }

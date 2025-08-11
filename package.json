@@ -1,15 +1,16 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "scan-reach",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --port 8080",
     "build": "next build",
     "build:dev": "next build --mode development",
     "lint": "eslint .",
     "preview": "next preview",
-    "generate:types": "tsx supabase/genTypes.ts"
+    "generate:types": "tsx supabase/genTypes.ts",
+    "check:types": "tsc --noEmit"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -76,6 +77,7 @@
     "@eslint/js": "^9.9.0",
     "@tailwindcss/typography": "^0.5.15",
     "@types/node": "^22.5.5",
+    "@types/qrcode": "^1.5.5",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.20",

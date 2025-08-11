@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { createClient } from '@/utils/supabase/client';
 import { PublicMicrositeView } from '@/components/PublicMicrositeView';
 import { useMicrositeContent } from '@/hooks/useMicrositeContent';
 
@@ -11,8 +10,11 @@ interface MicrositeData {
   status: string;
 }
 
-export default function PublicMicrosite() {
-  const { micrositeUrl } = useParams<{ micrositeUrl: string }>();
+interface PublicMicrositeProps {
+  micrositeUrl: string;
+}
+
+export default function PublicMicrosite({ micrositeUrl }: PublicMicrositeProps) {
   const [microsite, setMicrosite] = useState<MicrositeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +35,7 @@ export default function PublicMicrosite() {
     try {
       setLoading(true);
       
+      const supabase = createClient();
       // Fetch microsite by URL
       const { data: micrositeData, error: micrositeError } = await supabase
         .from('microsites')
@@ -50,7 +53,10 @@ export default function PublicMicrosite() {
         return;
       }
 
-      setMicrosite(micrositeData);
+      setMicrosite({
+        ...micrositeData,
+        url: micrositeData.url || '',
+      });
       
       // Track scan
       await trackScan(micrositeData.id);
@@ -65,6 +71,7 @@ export default function PublicMicrosite() {
 
   const trackScan = async (micrositeId: string) => {
     try {
+      const supabase = createClient();
       await supabase
         .from('microsite_scans')
         .insert({

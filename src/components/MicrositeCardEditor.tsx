@@ -10,6 +10,7 @@ import { Plus, Trash2, GripVertical } from 'lucide-react';
 import { MicrositeCard, MicrositeButton } from '@/hooks/useMicrositeContent';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useEffect } from 'react';
+import { Card } from './ui/card';
 
 interface MicrositeCardEditorProps {
   card: MicrositeCard;
@@ -89,6 +90,7 @@ export const MicrositeCardEditor: React.FC<MicrositeCardEditorProps> = ({
   const validateActionValue = (actionType: string, value: string): boolean => {
     switch (actionType) {
       case 'tel':
+        // eslint-disable-next-line no-useless-escape
         return /^[\+]?[0-9\s\-\(\)]+$/.test(value);
       case 'mailto':
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
