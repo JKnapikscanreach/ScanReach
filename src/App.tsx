@@ -11,7 +11,6 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { createDebugSupabaseClient, debugFetch } from "@/utils/debugWrapper";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useRef } from "react";
-import Index from "./pages/Index";
 import Users from "./pages/Users";
 import UserDetail from "./pages/UserDetail";
 import Microsites from "./pages/Microsites";
