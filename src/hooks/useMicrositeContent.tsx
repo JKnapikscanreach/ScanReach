@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/utils/supabase/client';
 import { useSmartAutoSave } from './useSmartAutoSave';
 
 export interface MicrositeContent {

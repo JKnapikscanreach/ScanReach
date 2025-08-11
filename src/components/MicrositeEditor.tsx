@@ -4,10 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { Plus, GripVertical, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
-import { useMicrositeContent, MicrositeCard } from '@/hooks/useMicrositeContent';
+import { useMicrositeContent } from '@/hooks/useMicrositeContent';
 import { MicrositeCardEditor } from './MicrositeCardEditor';
 import { MicrositePreview } from './MicrositePreview';
 import { ThemeCustomizer } from './ThemeCustomizer';
@@ -15,7 +12,7 @@ import { HeaderImageUpload } from './HeaderImageUpload';
 import { MicrositeQRSection } from './MicrositeQRSection';
 import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/useDebounce';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/utils/supabase/client';
 
 interface MicrositeEditorProps {
   micrositeId: string;

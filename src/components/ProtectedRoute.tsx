@@ -1,5 +1,8 @@
+"use client";
+
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate, useLocation } from 'react-router-dom';
+import { useRouter, usePathname } from 'next/navigation';
+import { useEffect } from 'react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -11,7 +14,18 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requireAdmin = false 
 }) => {
   const { user, loading, isAdmin } = useAuth();
-  const location = useLocation();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      // Store the current path to redirect back after login
+      if (pathname) {
+        sessionStorage.setItem('redirectPath', pathname);
+      }
+      router.push('/auth');
+    }
+  }, [user, loading, router, pathname]);
 
   if (loading) {
     return (
@@ -22,7 +36,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!user) {
-    return <Navigate to="/auth" state={{ from: location }} replace />;
+    // Return loading state while redirecting
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   if (requireAdmin && !isAdmin) {

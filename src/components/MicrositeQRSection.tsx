@@ -11,7 +11,7 @@ import { StickerOrderModal } from './StickerOrderModal';
 import { OrderHistoryModal } from './OrderHistoryModal';
 import { ColorPicker } from '@/components/ui/color-picker';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/utils/supabase/client';
 
 interface MicrositeQRSectionProps {
   micrositeId: string;

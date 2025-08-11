@@ -4,12 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useDebug } from '@/contexts/DebugContext';
-import { createDebugClient } from '@/integrations/supabase/debugClient';
 import { Loader2, Package, Truck, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { createClient } from '@/utils/supabase/client';
 
 interface StickerOrderModalProps {
   isOpen: boolean;
@@ -73,7 +72,6 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
   qrDataUrl,
 }) => {
   const { toast } = useToast();
-  const { addEntry } = useDebug();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
@@ -115,7 +113,7 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const supabase = createDebugClient(addEntry);
+      const supabase = createClient();
       const { data, error } = await supabase.functions.invoke('printful-products');
       
       if (error) {
@@ -170,7 +168,7 @@ export const StickerOrderModal: React.FC<StickerOrderModalProps> = ({
     setUploading(true);
     
     try {
-      const supabase = createDebugClient(addEntry);
+      const supabase = createClient();
       
       // Upload QR code
       const uploadResponse = await supabase.functions.invoke('printful-upload-file', {

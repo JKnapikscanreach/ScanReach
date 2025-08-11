@@ -2,9 +2,8 @@ import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, X, Image as ImageIcon, AlertCircle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { X, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { supabase } from '@/utils/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface HeaderImageUploadProps {

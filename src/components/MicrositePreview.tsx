@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Phone, Mail, ExternalLink, Globe, MapPin, MessageCircle, Heart, Star } from 'lucide-react';
+import { Phone, Mail, ExternalLink } from 'lucide-react';
 import { MicrositeContent, MicrositeCard } from '@/hooks/useMicrositeContent';
 
 interface MicrositePreviewProps {
